@@ -7,8 +7,16 @@ import { readImageMetadata } from "./image-metadata.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "1.2.0";
+const SKIN_VERSION = "1.5.0";
 const MAX_ART_BYTES = 16 * 1024 * 1024;
+const MAX_PRESET_ASSET_BYTES = 2 * 1024 * 1024;
+const PRESET_ASSET_MIME_TYPES = new Map([
+  [".svg", "image/svg+xml"],
+  [".png", "image/png"],
+  [".jpg", "image/jpeg"],
+  [".jpeg", "image/jpeg"],
+  [".webp", "image/webp"],
+]);
 const STRONG_THEME_AUDIT_MS = 30000;
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
 const BROWSER_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
@@ -408,6 +416,29 @@ const THEME_CHOICES = {
   safeArea: new Set(["auto", "left", "right", "center", "none"]),
   taskMode: new Set(["auto", "ambient", "banner", "off"]),
 };
+const THEME_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const CSS_NUMBER = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)%?`;
+const CSS_HUE = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:deg|grad|rad|turn)?`;
+const CSS_HEX_COLOR_PATTERN = /^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i;
+const CSS_FUNCTION_COLOR_PATTERNS = [
+  new RegExp(String.raw`^rgb\(\s*${CSS_NUMBER}\s+${CSS_NUMBER}\s+${CSS_NUMBER}(?:\s*\/\s*${CSS_NUMBER})?\s*\)$`, "i"),
+  new RegExp(String.raw`^rgb\(\s*${CSS_NUMBER}\s*,\s*${CSS_NUMBER}\s*,\s*${CSS_NUMBER}(?:\s*,\s*${CSS_NUMBER})?\s*\)$`, "i"),
+  new RegExp(String.raw`^hsl\(\s*${CSS_HUE}\s+${CSS_NUMBER}\s+${CSS_NUMBER}(?:\s*\/\s*${CSS_NUMBER})?\s*\)$`, "i"),
+  new RegExp(String.raw`^hsl\(\s*${CSS_HUE}\s*,\s*${CSS_NUMBER}\s*,\s*${CSS_NUMBER}(?:\s*,\s*${CSS_NUMBER})?\s*\)$`, "i"),
+  new RegExp(String.raw`^oklch\(\s*${CSS_NUMBER}\s+${CSS_NUMBER}\s+${CSS_HUE}(?:\s*\/\s*${CSS_NUMBER})?\s*\)$`, "i"),
+  new RegExp(String.raw`^oklab\(\s*${CSS_NUMBER}\s+${CSS_NUMBER}\s+${CSS_NUMBER}(?:\s*\/\s*${CSS_NUMBER})?\s*\)$`, "i"),
+];
+const isSafeCssColor = (value) => CSS_HEX_COLOR_PATTERN.test(value) ||
+  CSS_FUNCTION_COLOR_PATTERNS.some((pattern) => pattern.test(value));
+const THEME_TOKEN_KEYS = {
+  colors: new Set([
+    "canvas", "surface", "surfaceRaised", "textPrimary", "textSecondary", "accent", "phosphor", "positive",
+    "lineStrong", "lineDefault", "lineSubtle",
+  ]),
+  strokes: new Set(["subtle", "default", "strong", "focus"]),
+  radii: new Set(["panel", "control"]),
+  effects: new Set(["scanlineOpacity", "gridOpacity", "vignetteOpacity", "brandOpacity"]),
+};
 
 function normalizedUnit(value, name) {
   if (value === null || value === undefined || value === "") return null;
@@ -430,6 +461,35 @@ function normalizedText(value, name, fallback, maxLength = 120) {
     throw new Error(`${name} must be a short single-line string`);
   }
   return value;
+}
+
+function normalizedThemeId(value) {
+  const id = normalizedText(value, "id", "custom", 64);
+  return THEME_ID_PATTERN.test(id) ? id : "custom";
+}
+
+function normalizedThemeTokens(value) {
+  const raw = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const tokens = { colors: {}, strokes: {}, radii: {}, effects: {} };
+  const colors = raw.colors && typeof raw.colors === "object" && !Array.isArray(raw.colors)
+    ? raw.colors : {};
+  for (const key of THEME_TOKEN_KEYS.colors) {
+    if (typeof colors[key] !== "string") continue;
+    const candidate = colors[key].trim();
+    if (isSafeCssColor(candidate)) tokens.colors[key] = candidate;
+  }
+  for (const [group, maximum] of [["strokes", 50], ["radii", 16], ["effects", .35]]) {
+    const source = raw[group] && typeof raw[group] === "object" && !Array.isArray(raw[group])
+      ? raw[group] : {};
+    for (const key of THEME_TOKEN_KEYS[group]) {
+      const candidate = source[key];
+      if (typeof candidate !== "number" || !Number.isFinite(candidate) || candidate < 0 || candidate > maximum) {
+        continue;
+      }
+      tokens[group][key] = candidate;
+    }
+  }
+  return tokens;
 }
 
 async function loadTheme(themeDir) {
@@ -460,7 +520,7 @@ async function loadTheme(themeDir) {
   const palette = raw.palette && typeof raw.palette === "object" && !Array.isArray(raw.palette)
     ? raw.palette : {};
   const theme = {
-    id: normalizedText(raw.id, "id", "custom", 80),
+    id: normalizedThemeId(raw.id),
     name: normalizedText(raw.name, "name", "Codex Dream Skin", 120),
     image,
     appearance: normalizedChoice(raw.appearance, "appearance", THEME_CHOICES.appearance, "auto"),
@@ -471,10 +531,11 @@ async function loadTheme(themeDir) {
       taskMode: normalizedChoice(art.taskMode, "art.taskMode", THEME_CHOICES.taskMode, "auto"),
     },
     palette: {},
+    tokens: normalizedThemeTokens(raw.tokens),
   };
   if (typeof palette.accent === "string" && palette.accent.trim()) {
     const accent = palette.accent.trim();
-    if (!/^(?:#[\da-f]{3,8}|(?:rgb|hsl|oklch|oklab)\([^;{}]{1,96}\))$/i.test(accent)) {
+    if (!isSafeCssColor(accent)) {
       throw new Error("palette.accent is not a supported CSS color");
     }
     theme.palette.accent = accent;
@@ -509,22 +570,86 @@ async function loadTheme(themeDir) {
   };
 }
 
+async function loadManagedPresetCss(themeId) {
+  if (!THEME_ID_PATTERN.test(themeId) || themeId === "custom") return "";
+  const presetRoot = path.join(root, "assets", "presets");
+  const presetPath = path.join(presetRoot, `${themeId}.css`);
+  try {
+    const [realPresetRoot, realPresetPath] = await Promise.all([
+      fs.realpath(presetRoot),
+      fs.realpath(presetPath),
+    ]);
+    const relativePreset = path.relative(realPresetRoot, realPresetPath);
+    if (!relativePreset || relativePreset.startsWith("..") || path.isAbsolute(relativePreset)) {
+      throw new Error("Preset stylesheet escaped the managed assets directory");
+    }
+    const stat = await fs.stat(realPresetPath);
+    if (!stat.isFile()) throw new Error("Preset stylesheet is not a file");
+    const css = await fs.readFile(realPresetPath, "utf8");
+    return await inlineManagedPresetAssetUrls(css, realPresetPath);
+  } catch (error) {
+    if (error?.code === "ENOENT") return "";
+    throw error;
+  }
+}
+
+async function inlineManagedPresetAssetUrls(css, presetPath) {
+  const assetsRoot = await fs.realpath(path.join(root, "assets"));
+  const urlPattern = /url\(\s*(["']?)([^"')]+)\1\s*\)/gi;
+  const matches = [...css.matchAll(urlPattern)];
+  if (matches.length === 0) return css;
+
+  const replacements = await Promise.all(matches.map(async (match) => {
+    const source = match[2].trim();
+    if (!source || source.startsWith("data:")) return match[0];
+    if (/^[a-z][a-z\d+.-]*:/i.test(source) || source.startsWith("/") || source.startsWith("\\")) {
+      return "none";
+    }
+    const assetPath = path.resolve(path.dirname(presetPath), source);
+    try {
+      const realAssetPath = await fs.realpath(assetPath);
+      const relativeAsset = path.relative(assetsRoot, realAssetPath);
+      const extension = path.extname(realAssetPath).toLowerCase();
+      const mime = PRESET_ASSET_MIME_TYPES.get(extension);
+      if (!relativeAsset || relativeAsset.startsWith("..") || path.isAbsolute(relativeAsset) || !mime) return "none";
+      const asset = await fs.readFile(realAssetPath);
+      if (asset.length === 0 || asset.length > MAX_PRESET_ASSET_BYTES) return "none";
+      return `url("data:${mime};base64,${asset.toString("base64")}")`;
+    } catch {
+      return "none";
+    }
+  }));
+
+  let offset = 0;
+  return matches.map((match, index) => {
+    const before = css.slice(offset, match.index);
+    offset = match.index + match[0].length;
+    return `${before}${replacements[index]}`;
+  }).join("") + css.slice(offset);
+}
+
 async function loadPayload(themeDir = path.join(root, "assets"), candidateTheme = null) {
   const loadedTheme = candidateTheme ?? await loadTheme(themeDir);
-  const [css, template] = await Promise.all([
+  const [css, template, presetCss] = await Promise.all([
     fs.readFile(path.join(root, "assets", "dream-skin.css"), "utf8"),
     fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8"),
+    loadManagedPresetCss(loadedTheme.theme.id),
   ]);
+  const combinedCss = presetCss ? `${css}\n\n${presetCss}` : css;
   const extension = path.extname(loadedTheme.imagePath).toLowerCase();
   const mime = extension === ".jpg" || extension === ".jpeg" ? "image/jpeg"
     : extension === ".webp" ? "image/webp" : "image/png";
   const artDataUrl = `data:${mime};base64,${loadedTheme.imageBytes.toString("base64")}`;
   const payload = template
-    .replace("__DREAM_CSS_JSON__", JSON.stringify(css))
+    .replace("__DREAM_CSS_JSON__", JSON.stringify(combinedCss))
     .replace("__DREAM_ART_JSON__", JSON.stringify(artDataUrl))
     .replace("__DREAM_THEME_JSON__", JSON.stringify(loadedTheme.theme));
   const { imageBytes: _imageBytes, ...themeState } = loadedTheme;
-  return { ...themeState, payload };
+  return {
+    ...themeState,
+    payload,
+    managedPresetCssBytes: Buffer.byteLength(presetCss),
+  };
 }
 
 async function fileExists(filePath) {
@@ -842,15 +967,37 @@ async function removeFromSession(session) {
       'dream-safe-center', 'dream-safe-right', 'dream-safe-none',
       'dream-task-ambient', 'dream-task-banner', 'dream-task-off'
     );
+    document.documentElement?.removeAttribute('data-dream-theme-id');
     for (const property of [
       '--dream-art', '--dream-art-position', '--dream-focus-x', '--dream-focus-y',
       '--dream-accent', '--dream-accent-ink', '--dream-image-luma'
     ]) document.documentElement?.style.removeProperty(property);
+    for (const property of [...(document.documentElement?.style || [])]) {
+      if (property.startsWith('--dream-token-')) document.documentElement.style.removeProperty(property);
+    }
     document.querySelectorAll('.dream-home').forEach((node) => node.classList.remove('dream-home'));
     document.querySelectorAll('.dream-task').forEach((node) => node.classList.remove('dream-task'));
     document.querySelectorAll('.dream-home-shell').forEach((node) => node.classList.remove('dream-home-shell'));
+    document.querySelectorAll('.dream-home-utility').forEach((node) => node.classList.remove('dream-home-utility'));
+    document.querySelectorAll('.dream-summary-panel').forEach((node) => node.classList.remove('dream-summary-panel'));
+    for (const className of [
+      'dream-sidebar-navigation-head', 'dream-sidebar-navigation-body',
+      'dream-tactical-navigation-item', 'dream-tactical-navigation-new-task',
+      'dream-sidebar-projects', 'dream-project-tree-item', 'dream-project-tree-folder',
+      'dream-sidebar-tasks', 'dream-sidebar-native-footer',
+      'dream-tactical-footer-extra-control',
+      'dream-main-thread-scroll', 'dream-main-composer-section',
+      'dream-composer-input-line', 'dream-composer-status-bar',
+      'dream-tactical-menu-button', 'dream-tactical-menu-file',
+      'dream-tactical-menu-edit', 'dream-tactical-menu-view',
+      'dream-tactical-menu-help', 'dream-tactical-topbar-hidden'
+    ]) document.querySelectorAll('.' + className).forEach((node) => node.classList.remove(className));
     document.getElementById('codex-dream-skin-style')?.remove();
     document.getElementById('codex-dream-skin-chrome')?.remove();
+    document.getElementById('codex-dream-skin-brand-mark')?.remove();
+    document.getElementById('codex-dream-skin-footer')?.remove();
+    document.getElementById('codex-dream-skin-project-scrollbar')?.remove();
+    document.getElementById('codex-dream-skin-right-rail')?.remove();
     delete window.__CODEX_DREAM_SKIN_STATE__;
     return true;
   })()`);
@@ -859,12 +1006,36 @@ async function removeFromSession(session) {
 async function verifyRemovedSession(session) {
   return session.evaluate(`(() =>
     !document.documentElement.classList.contains('codex-dream-skin') &&
+    !document.documentElement.hasAttribute('data-dream-theme-id') &&
     !document.documentElement.style.getPropertyValue('--dream-art') &&
+    ![...document.documentElement.style].some((property) => property.startsWith('--dream-token-')) &&
     !document.querySelector('.dream-home') &&
     !document.querySelector('.dream-task') &&
     !document.querySelector('.dream-home-shell') &&
+    !document.querySelector('.dream-home-utility') &&
+    !document.querySelector('.dream-summary-panel') &&
+    !document.querySelector('.dream-sidebar-navigation-head') &&
+    !document.querySelector('.dream-sidebar-navigation-body') &&
+    !document.querySelector('.dream-tactical-navigation-item') &&
+    !document.querySelector('.dream-tactical-navigation-new-task') &&
+    !document.querySelector('.dream-project-tree-item') &&
+    !document.querySelector('.dream-project-tree-folder') &&
+    !document.querySelector('.dream-sidebar-projects') &&
+    !document.querySelector('.dream-sidebar-tasks') &&
+    !document.querySelector('.dream-sidebar-native-footer') &&
+    !document.querySelector('.dream-tactical-footer-extra-control') &&
+    !document.querySelector('.dream-main-thread-scroll') &&
+    !document.querySelector('.dream-main-composer-section') &&
+    !document.querySelector('.dream-composer-input-line') &&
+    !document.querySelector('.dream-composer-status-bar') &&
+    !document.querySelector('.dream-tactical-menu-button') &&
+    !document.querySelector('.dream-tactical-topbar-hidden') &&
     !document.getElementById('codex-dream-skin-style') &&
     !document.getElementById('codex-dream-skin-chrome') &&
+    !document.getElementById('codex-dream-skin-brand-mark') &&
+    !document.getElementById('codex-dream-skin-footer') &&
+    !document.getElementById('codex-dream-skin-project-scrollbar') &&
+    !document.getElementById('codex-dream-skin-right-rail') &&
     !window.__CODEX_DREAM_SKIN_STATE__
   )()`);
 }
@@ -1390,6 +1561,8 @@ if (path.resolve(process.argv[1] || "") === path.resolve(scriptPath)) {
       appearance: loaded.theme.appearance,
       art: loaded.theme.art,
       artMetadata: loaded.theme.artMetadata ?? null,
+      tokens: loaded.theme.tokens,
+      managedPresetCssBytes: loaded.managedPresetCssBytes,
     }));
   } else if (options.mode === "begin-operation") await runBeginOperation(options);
   else if (options.mode === "finish-operation") await runFinishOperation(options);

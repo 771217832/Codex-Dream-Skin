@@ -78,6 +78,23 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-dream-s
 
 导入图片必须是纯背景，不要使用包含窗口、侧栏、输入框、文字或按钮的效果截图。图片上限为 16 MB；宽或高不能超过 16384 像素，总像素不能超过 5000 万。
 
+### Codex Tactical CRT 预设与设计令牌
+
+安装后，`Codex Tactical CRT` 会和 Gothic 一样出现在托盘的「已保存主题」中；首次安装仍以 Arina 为当前主题。选择该预设后使用「重新应用主题」即可启用。它固定为暗色，保留 Codex 的原生布局和真实控件，只增加军用 CRT 风格的颜色、硬边框、字体与非交互装饰层。顶部琥珀色应用栏采用更高的仪表舱比例；中央任务区使用深绿色磷光场，并在可安全取得原生几何时显示低强度 OpenAI 磷光标记。
+
+侧栏沿用 Codex 的真实数据和交互：`01.NAVIGATION` 包含「新建任务」「已安排」「插件」「站点」「拉取请求」和「聊天」，`02.PROJECTS` 包含项目及项目内的真实线程；中央当前任务面板为 `03.MAIN_TASK`。原生底部「任务」控件保留为未编号辅助区。模块标题和边框不会创建虚构入口，也不会替换原生控件。
+
+整套 Tactical CRT 的可调视觉参数集中在 `theme.json` 的可选 `tokens` 对象。开发时编辑 [`presets/preset-codex-tactical-crt/theme.json`](./presets/preset-codex-tactical-crt/theme.json)；安装后可编辑 `%LOCALAPPDATA%\CodexDreamSkin\themes\preset-codex-tactical-crt\theme.json`，再从托盘重新选择该主题并应用。令牌分为：
+
+- `colors`：画布、表面、文字、强调色、成功色、磷光色，以及强/标准/弱线条颜色。其中 `phosphor` 统一控制中央任务区的深绿场与 OpenAI 磷光标记。颜色只接受 `#RGB`、`#RRGGBB`、`#RRGGBBAA` 和受限的 `rgb()`、`hsl()`、`oklch()`、`oklab()`；分号、花括号和 CSS 片段会被拒绝。
+- `strokes`：`subtle`、`default`、`strong`、`focus`，单位为像素，范围 `0–50`。
+- `radii`：`panel`、`control`，单位为像素，范围 `0–16`。
+- `effects`：`scanlineOpacity`、`gridOpacity`、`vignetteOpacity` 和 `brandOpacity`，范围 `0–0.35`；`brandOpacity` 单独控制中央磷光标记的不透明度。
+
+字段逐项校验：非法值只回退对应的预设默认值，未知字段会被忽略。`tokens.colors.accent` 优先于兼容旧主题的 `palette.accent`。预设样式集中在 [`assets/presets/preset-codex-tactical-crt.css`](./assets/presets/preset-codex-tactical-crt.css)，所有颜色、线宽、圆角和 CRT 透明度都从令牌读取，因此修改一处即可同步对应层级。
+
+背景为本项目通过 OpenAI 图像生成创建的原创纯背景；用户提供的截图只用于风格方向，没有作为像素素材导入。完整提示词、来源声明和最终尺寸见 [`presets/preset-codex-tactical-crt/ASSET.md`](./presets/preset-codex-tactical-crt/ASSET.md)。OpenAI 标记的几何不会随主题分发：渲染器只会在运行时从已安装 Codex 自带、同源的 `openai-blossom` 模块读取，并严格校验资源地址、模块大小和路径数据；任一检查失败就省略标记。该运行时复用仅用于匹配宿主应用的原生视觉，不表示 OpenAI 对此主题的背书。切回 Arina、Gothic 或自定义图片时，主题作用域、令牌变量、字体、CRT 装饰和标记都会在重新注入时清理。
+
 ## 恢复与卸载快捷方式
 
 恢复官方外观；如果 Codex 正在运行，确认后关闭并重新打开：

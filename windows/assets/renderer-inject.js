@@ -2,6 +2,62 @@
   const STATE_KEY = "__CODEX_DREAM_SKIN_STATE__";
   const STYLE_ID = "codex-dream-skin-style";
   const CHROME_ID = "codex-dream-skin-chrome";
+  const THEME_ATTRIBUTE = "data-dream-theme-id";
+  const THEME_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
+  const CSS_NUMBER = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)%?`;
+  const CSS_HUE = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:deg|grad|rad|turn)?`;
+  const CSS_HEX_COLOR_PATTERN = /^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i;
+  const CSS_FUNCTION_COLOR_PATTERNS = [
+    new RegExp(String.raw`^rgb\(\s*${CSS_NUMBER}\s+${CSS_NUMBER}\s+${CSS_NUMBER}(?:\s*\/\s*${CSS_NUMBER})?\s*\)$`, "i"),
+    new RegExp(String.raw`^rgb\(\s*${CSS_NUMBER}\s*,\s*${CSS_NUMBER}\s*,\s*${CSS_NUMBER}(?:\s*,\s*${CSS_NUMBER})?\s*\)$`, "i"),
+    new RegExp(String.raw`^hsl\(\s*${CSS_HUE}\s+${CSS_NUMBER}\s+${CSS_NUMBER}(?:\s*\/\s*${CSS_NUMBER})?\s*\)$`, "i"),
+    new RegExp(String.raw`^hsl\(\s*${CSS_HUE}\s*,\s*${CSS_NUMBER}\s*,\s*${CSS_NUMBER}(?:\s*,\s*${CSS_NUMBER})?\s*\)$`, "i"),
+    new RegExp(String.raw`^oklch\(\s*${CSS_NUMBER}\s+${CSS_NUMBER}\s+${CSS_HUE}(?:\s*\/\s*${CSS_NUMBER})?\s*\)$`, "i"),
+    new RegExp(String.raw`^oklab\(\s*${CSS_NUMBER}\s+${CSS_NUMBER}\s+${CSS_NUMBER}(?:\s*\/\s*${CSS_NUMBER})?\s*\)$`, "i"),
+  ];
+  const isSafeCssColor = (value) => {
+    const syntaxValid = CSS_HEX_COLOR_PATTERN.test(value) ||
+      CSS_FUNCTION_COLOR_PATTERNS.some((pattern) => pattern.test(value));
+    if (!syntaxValid) return false;
+    try {
+      return typeof globalThis.CSS?.supports !== "function" || globalThis.CSS.supports("color", value);
+    } catch {
+      return false;
+    }
+  };
+  const TOKEN_PROPERTY_MAP = {
+    colors: {
+      canvas: "--dream-token-color-canvas",
+      surface: "--dream-token-color-surface",
+      surfaceRaised: "--dream-token-color-surface-raised",
+      textPrimary: "--dream-token-color-text-primary",
+      textSecondary: "--dream-token-color-text-secondary",
+      accent: "--dream-token-color-accent",
+      phosphor: "--dream-token-color-phosphor",
+      positive: "--dream-token-color-positive",
+      lineStrong: "--dream-token-color-line-strong",
+      lineDefault: "--dream-token-color-line-default",
+      lineSubtle: "--dream-token-color-line-subtle",
+    },
+    strokes: {
+      subtle: "--dream-token-stroke-subtle",
+      default: "--dream-token-stroke-default",
+      strong: "--dream-token-stroke-strong",
+      focus: "--dream-token-stroke-focus",
+    },
+    radii: {
+      panel: "--dream-token-radius-panel",
+      control: "--dream-token-radius-control",
+    },
+    effects: {
+      scanlineOpacity: "--dream-token-effect-scanline-opacity",
+      gridOpacity: "--dream-token-effect-grid-opacity",
+      vignetteOpacity: "--dream-token-effect-vignette-opacity",
+      brandOpacity: "--dream-token-effect-brand-opacity",
+    },
+  };
+  const TOKEN_PROPERTIES = Object.values(TOKEN_PROPERTY_MAP)
+    .flatMap((group) => Object.values(group));
   const ROOT_CLASSES = [
     "codex-dream-skin",
     "dream-theme-light",
@@ -18,6 +74,7 @@
     "dream-task-ambient",
     "dream-task-banner",
     "dream-task-off",
+    "dream-sidebar-collapsed",
   ];
   const ROOT_PROPERTIES = [
     "--dream-art",
@@ -27,11 +84,67 @@
     "--dream-accent",
     "--dream-accent-ink",
     "--dream-image-luma",
+    "--dream-token-runtime-sidebar-width",
+    "--dream-token-runtime-sidebar-navigation-body-height",
+    "--dream-token-runtime-sidebar-project-frame-top",
+    "--dream-token-runtime-sidebar-scrollbar-left",
+    "--dream-token-runtime-sidebar-scrollbar-top",
+    "--dream-token-runtime-sidebar-scrollbar-height",
+    "--dream-token-runtime-sidebar-scrollbar-thumb-height",
+    "--dream-token-runtime-sidebar-scrollbar-thumb-offset",
+    ...TOKEN_PROPERTIES,
   ];
   const HOME_UTILITY_CLASS = "dream-home-utility";
+  const SUMMARY_PANEL_CLASS = "dream-summary-panel";
+  const TACTICAL_THEME_ID = "preset-codex-tactical-crt";
+  const BRAND_MARK_ID = "codex-dream-skin-brand-mark";
+  const TACTICAL_FOOTER_ID = "codex-dream-skin-footer";
+  const TACTICAL_SCROLLBAR_ID = "codex-dream-skin-project-scrollbar";
+  const TACTICAL_RIGHT_RAIL_ID = "codex-dream-skin-right-rail";
+  const SIDEBAR_NATIVE_FOOTER_CLASS = "dream-sidebar-native-footer";
+  const TACTICAL_TOP_BAR_CLASSES = [
+    "dream-tactical-menu-button",
+    "dream-tactical-menu-file",
+    "dream-tactical-menu-edit",
+    "dream-tactical-menu-view",
+    "dream-tactical-menu-help",
+    "dream-tactical-topbar-hidden",
+  ];
+  const SIDEBAR_MODULE_CLASSES = [
+    "dream-sidebar-navigation-head",
+    "dream-sidebar-navigation-body",
+    "dream-tactical-navigation-item",
+    "dream-tactical-navigation-new-task",
+    "dream-sidebar-projects",
+    "dream-project-tree-item",
+    "dream-project-tree-folder",
+    "dream-sidebar-tasks",
+    "dream-tactical-footer-extra-control",
+  ];
+  const MAIN_LAYOUT_CLASSES = [
+    "dream-main-thread-scroll",
+    "dream-main-composer-section",
+    "dream-composer-input-line",
+    "dream-composer-status-bar",
+  ];
   const installToken = {};
   let samplingNativeShell = false;
   let observer = null;
+  let layoutObserver = null;
+  let layoutObservedAside = null;
+  let sidebarScrollNode = null;
+  let sidebarScrollHandler = null;
+  let tacticalScrollbarNode = null;
+  let tacticalScrollbarPointerDownHandler = null;
+  let tacticalScrollbarPointerMoveHandler = null;
+  let tacticalScrollbarPointerUpHandler = null;
+  let tacticalScrollbarWheelHandler = null;
+  let tacticalScrollbarDragState = null;
+  let navigationWheelNode = null;
+  let navigationWheelHandler = null;
+  let nativeBrandPath = null;
+  let brandLoadPromise = null;
+  let brandRetryAfter = 0;
   window.__CODEX_DREAM_SKIN_DISABLED__ = false;
 
   const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, Number(value)));
@@ -55,15 +168,37 @@
   const normalizeConfig = (value) => {
     const config = value && typeof value === "object" ? value : {};
     const art = config.art && typeof config.art === "object" ? config.art : {};
+    const rawTokens = config.tokens && typeof config.tokens === "object" ? config.tokens : {};
     const hasNumber = (candidate) =>
       (typeof candidate === "number" || (typeof candidate === "string" && candidate.trim() !== "")) &&
       Number.isFinite(Number(candidate));
-    const requestedAccent = typeof config?.palette?.accent === "string"
-      ? config.palette.accent.trim()
-      : "";
-    const safeAccent = /^(?:#[\da-f]{3,8}|(?:rgb|hsl|oklch|oklab)\([^;{}]{1,96}\))$/i.test(requestedAccent)
-      ? requestedAccent
-      : null;
+    const tokenProperties = {};
+    const colorTokens = rawTokens.colors && typeof rawTokens.colors === "object" ? rawTokens.colors : {};
+    for (const [key, property] of Object.entries(TOKEN_PROPERTY_MAP.colors)) {
+      if (typeof colorTokens[key] !== "string") continue;
+      const candidate = colorTokens[key].trim();
+      if (isSafeCssColor(candidate)) tokenProperties[property] = candidate;
+    }
+    for (const [group, maximum, unit] of [
+      ["strokes", 50, "px"],
+      ["radii", 16, "px"],
+      ["effects", .35, ""],
+    ]) {
+      const source = rawTokens[group] && typeof rawTokens[group] === "object" ? rawTokens[group] : {};
+      for (const [key, property] of Object.entries(TOKEN_PROPERTY_MAP[group])) {
+        const candidate = source[key];
+        if (typeof candidate !== "number" || !Number.isFinite(candidate) || candidate < 0 || candidate > maximum) {
+          continue;
+        }
+        tokenProperties[property] = `${candidate}${unit}`;
+      }
+    }
+    const requestedLegacyAccent = typeof config?.palette?.accent === "string"
+      ? config.palette.accent.trim() : "";
+    const safeLegacyAccent = isSafeCssColor(requestedLegacyAccent)
+      ? requestedLegacyAccent : null;
+    const themeId = typeof config.id === "string" && THEME_ID_PATTERN.test(config.id)
+      ? config.id : "custom";
     const appearance = ["auto", "light", "dark"].includes(config.appearance)
       ? config.appearance
       : "auto";
@@ -80,16 +215,25 @@
       taskMode,
       focusX: hasNumber(art.focusX) ? clamp(art.focusX) : null,
       focusY: hasNumber(art.focusY) ? clamp(art.focusY) : null,
-      accent: safeAccent,
+      themeId,
+      tokenProperties,
+      accent: tokenProperties[TOKEN_PROPERTY_MAP.colors.accent] || safeLegacyAccent,
       initialAspect: Number.isFinite(metadataRatio) && metadataRatio > 0 ? metadataRatio : null,
     };
   };
 
   const previous = window[STATE_KEY];
-  if (previous?.observer) previous.observer.disconnect();
-  if (previous?.timer) clearInterval(previous.timer);
-  if (previous?.scheduler?.timeout) clearTimeout(previous.scheduler.timeout);
-  if (previous?.artUrl) URL.revokeObjectURL(previous.artUrl);
+  let previousCleaned = false;
+  try {
+    previousCleaned = previous?.cleanup?.() === true;
+  } catch {}
+  if (!previousCleaned) {
+    if (previous?.observer) previous.observer.disconnect();
+    if (previous?.timer) clearInterval(previous.timer);
+    if (previous?.scheduler?.timeout) clearTimeout(previous.scheduler.timeout);
+    if (previous?.artUrl) URL.revokeObjectURL(previous.artUrl);
+  }
+  window.__CODEX_DREAM_SKIN_DISABLED__ = false;
   const artUrl = (() => {
     const comma = artDataUrl.indexOf(",");
     const binary = atob(artDataUrl.slice(comma + 1));
@@ -106,7 +250,7 @@
   const existingStyle = document.getElementById(STYLE_ID);
   if (existingStyle) {
     existingStyle.textContent = cssText;
-    existingStyle.dataset.dreamVersion = "3";
+    existingStyle.dataset.dreamVersion = "5";
   }
 
   const analyzeArt = () => new Promise((resolve) => {
@@ -278,13 +422,572 @@
   const clearSkinDom = () => {
     const root = document.documentElement;
     root?.classList.remove(...ROOT_CLASSES);
+    root?.removeAttribute?.(THEME_ATTRIBUTE);
     for (const property of ROOT_PROPERTIES) root?.style.removeProperty(property);
     document.querySelectorAll(".dream-home").forEach((node) => node.classList.remove("dream-home"));
     document.querySelectorAll(".dream-task").forEach((node) => node.classList.remove("dream-task"));
     document.querySelectorAll(".dream-home-shell").forEach((node) => node.classList.remove("dream-home-shell"));
     document.querySelectorAll(`.${HOME_UTILITY_CLASS}`).forEach((node) => node.classList.remove(HOME_UTILITY_CLASS));
+    document.querySelectorAll(`.${SUMMARY_PANEL_CLASS}`).forEach((node) => node.classList.remove(SUMMARY_PANEL_CLASS));
+    for (const className of SIDEBAR_MODULE_CLASSES) {
+      document.querySelectorAll(`.${className}`).forEach((node) => node.classList.remove(className));
+    }
+    for (const className of MAIN_LAYOUT_CLASSES) {
+      document.querySelectorAll(`.${className}`).forEach((node) => node.classList.remove(className));
+    }
+    document.querySelectorAll(`.${SIDEBAR_NATIVE_FOOTER_CLASS}`)
+      .forEach((node) => node.classList.remove(SIDEBAR_NATIVE_FOOTER_CLASS));
+    for (const className of TACTICAL_TOP_BAR_CLASSES) {
+      document.querySelectorAll(`.${className}`).forEach((node) => node.classList.remove(className));
+    }
+    clearTacticalScrollbarBindings();
     document.getElementById(STYLE_ID)?.remove();
     document.getElementById(CHROME_ID)?.remove();
+    document.getElementById(BRAND_MARK_ID)?.remove();
+    document.getElementById(TACTICAL_FOOTER_ID)?.remove();
+    document.getElementById(TACTICAL_SCROLLBAR_ID)?.remove();
+    document.getElementById(TACTICAL_RIGHT_RAIL_ID)?.remove();
+  };
+
+  const syncSummaryPanels = () => {
+    const summaryPanels = new Set();
+    for (const item of document.querySelectorAll('[class~="group/summary-panel-item"]')) {
+      const panel = item.closest?.('[class*="bg-token-dropdown-background"]');
+      if (panel) summaryPanels.add(panel);
+    }
+    for (const panel of document.querySelectorAll(`.${SUMMARY_PANEL_CLASS}`)) {
+      if (!summaryPanels.has(panel)) panel.classList.remove(SUMMARY_PANEL_CLASS);
+    }
+    for (const panel of summaryPanels) panel.classList.add(SUMMARY_PANEL_CLASS);
+  };
+
+  const directChildOf = (node, parent) => {
+    let candidate = node;
+    while (candidate?.parentElement && candidate.parentElement !== parent) {
+      candidate = candidate.parentElement;
+    }
+    return candidate?.parentElement === parent ? candidate : null;
+  };
+
+  const syncOwnedClass = (className, nodes) => {
+    const wanted = new Set(nodes.filter(Boolean));
+    for (const node of document.querySelectorAll(`.${className}`)) {
+      if (!wanted.has(node)) node.classList.remove(className);
+    }
+    for (const node of wanted) node.classList.add(className);
+  };
+
+  const measuredHeight = (node) => {
+    const height = Number(node?.getBoundingClientRect?.().height ?? node?.offsetHeight);
+    return Number.isFinite(height) && height > 0 ? height : 0;
+  };
+
+  const syncTacticalTopBar = () => {
+    const tactical = config.themeId === TACTICAL_THEME_ID;
+    const topBar = document.querySelector('[class~="group/application-menu-top-bar"]');
+    const buttons = topBar ? [...topBar.querySelectorAll("button")] : [];
+    const menuClasses = new Map([
+      ["FILE", "dream-tactical-menu-file"],
+      ["EDIT", "dream-tactical-menu-edit"],
+      ["VIEW", "dream-tactical-menu-view"],
+      ["HELP", "dream-tactical-menu-help"],
+    ]);
+    for (const button of buttons) {
+      for (const className of TACTICAL_TOP_BAR_CLASSES) button.classList.remove(className);
+      if (!tactical) continue;
+      const label = `${button.textContent || ""}`.trim().toUpperCase();
+      const menuClass = menuClasses.get(label);
+      if (menuClass) {
+        button.classList.add("dream-tactical-menu-button", menuClass);
+      } else {
+        button.classList.add("dream-tactical-topbar-hidden");
+      }
+    }
+  };
+
+  const clearTacticalScrollbarBindings = () => {
+    if (sidebarScrollNode && sidebarScrollHandler) {
+      sidebarScrollNode.removeEventListener?.("scroll", sidebarScrollHandler);
+    }
+    if (tacticalScrollbarNode) {
+      tacticalScrollbarNode.removeEventListener?.("pointerdown", tacticalScrollbarPointerDownHandler);
+      tacticalScrollbarNode.removeEventListener?.("pointermove", tacticalScrollbarPointerMoveHandler);
+      tacticalScrollbarNode.removeEventListener?.("pointerup", tacticalScrollbarPointerUpHandler);
+      tacticalScrollbarNode.removeEventListener?.("pointercancel", tacticalScrollbarPointerUpHandler);
+      tacticalScrollbarNode.removeEventListener?.("wheel", tacticalScrollbarWheelHandler);
+    }
+    if (navigationWheelNode && navigationWheelHandler) {
+      navigationWheelNode.removeEventListener?.("wheel", navigationWheelHandler);
+    }
+    sidebarScrollNode = null;
+    sidebarScrollHandler = null;
+    tacticalScrollbarNode = null;
+    tacticalScrollbarPointerDownHandler = null;
+    tacticalScrollbarPointerMoveHandler = null;
+    tacticalScrollbarPointerUpHandler = null;
+    tacticalScrollbarWheelHandler = null;
+    tacticalScrollbarDragState = null;
+    navigationWheelNode = null;
+    navigationWheelHandler = null;
+  };
+
+  const syncTacticalScrollbar = (
+    aside,
+    scroll,
+    navigationBody,
+    navigationHeadHeight,
+    navigationBodyHeight,
+    panelGap,
+  ) => {
+    const root = document.documentElement;
+    const tactical = config.themeId === TACTICAL_THEME_ID;
+    let scrollbar = document.getElementById(TACTICAL_SCROLLBAR_ID);
+    if (!tactical || !aside || !scroll) {
+      scrollbar?.remove();
+      clearTacticalScrollbarBindings();
+      return;
+    }
+    if (!scrollbar) {
+      scrollbar = document.createElement("div");
+      scrollbar.id = TACTICAL_SCROLLBAR_ID;
+      const thumb = document.createElement("div");
+      thumb.classList.add("dream-project-scrollbar-thumb");
+      scrollbar.appendChild(thumb);
+      document.body.appendChild(scrollbar);
+    }
+    scrollbar.removeAttribute?.("aria-hidden");
+    scrollbar.setAttribute("role", "scrollbar");
+    scrollbar.setAttribute("aria-label", "02.PROJECTS");
+    scrollbar.setAttribute("aria-orientation", "vertical");
+
+    const tokenNumber = (property, fallback) => {
+      const raw = getComputedStyle(root).getPropertyValue?.(property);
+      const value = Number.parseFloat(raw);
+      return Number.isFinite(value) ? value : fallback;
+    };
+    const updateMetrics = () => {
+      const asideRect = aside.getBoundingClientRect?.();
+      if (!asideRect) return;
+      const titleHeight = tokenNumber("--dream-token-layout-project-title-height", 42);
+      const scrollbarWidth = tokenNumber("--dream-token-layout-scrollbar", 8);
+      const scrollbarInset = tokenNumber("--dream-token-layout-scrollbar-inset", 4);
+      const frameStroke = tokenNumber("--dream-token-stroke-strong", 2);
+      const frameTop = navigationHeadHeight + navigationBodyHeight + panelGap;
+      const trackTop = asideRect.top + frameTop + titleHeight + scrollbarInset;
+      const trackBottom = asideRect.bottom - frameStroke - scrollbarInset;
+      const trackHeight = Math.max(0, trackBottom - trackTop);
+      const maximumScroll = Math.max(0, Number(scroll.scrollHeight) - Number(scroll.clientHeight));
+      const projectContentHeight = Math.max(
+        trackHeight,
+        Number(scroll.scrollHeight) - navigationBodyHeight - panelGap,
+      );
+      const thumbHeight = Math.max(32,
+        Math.min(trackHeight, trackHeight * (trackHeight / projectContentHeight)));
+      const thumbTravel = Math.max(0, trackHeight - thumbHeight);
+      const thumbOffset = maximumScroll > 0
+        ? thumbTravel * (Number(scroll.scrollTop) / maximumScroll)
+        : 0;
+      root.style.setProperty(
+        "--dream-token-runtime-sidebar-scrollbar-left",
+        `${asideRect.right - frameStroke - scrollbarInset - scrollbarWidth}px`,
+      );
+      root.style.setProperty(
+        "--dream-token-runtime-sidebar-scrollbar-top",
+        `${trackTop}px`,
+      );
+      root.style.setProperty(
+        "--dream-token-runtime-sidebar-scrollbar-height",
+        `${trackHeight}px`,
+      );
+      root.style.setProperty(
+        "--dream-token-runtime-sidebar-scrollbar-thumb-height",
+        `${thumbHeight}px`,
+      );
+      root.style.setProperty(
+        "--dream-token-runtime-sidebar-scrollbar-thumb-offset",
+        `${thumbOffset}px`,
+      );
+      scrollbar.setAttribute("aria-valuemin", "0");
+      scrollbar.setAttribute("aria-valuemax", `${maximumScroll}`);
+      scrollbar.setAttribute("aria-valuenow", `${Math.max(0, Number(scroll.scrollTop))}`);
+    };
+
+    clearTacticalScrollbarBindings();
+    sidebarScrollNode = scroll;
+    sidebarScrollHandler = updateMetrics;
+    sidebarScrollNode.addEventListener?.("scroll", sidebarScrollHandler, { passive: true });
+    tacticalScrollbarNode = scrollbar;
+
+    const thumb = scrollbar.querySelector?.(".dream-project-scrollbar-thumb");
+    tacticalScrollbarPointerDownHandler = (event) => {
+      const maximumScroll = Math.max(0, Number(scroll.scrollHeight) - Number(scroll.clientHeight));
+      if (maximumScroll <= 0) return;
+      event.preventDefault?.();
+      const trackRect = scrollbar.getBoundingClientRect?.();
+      const thumbRect = thumb?.getBoundingClientRect?.();
+      if (!trackRect || !thumbRect) return;
+      if (event.target === thumb) {
+        tacticalScrollbarDragState = {
+          pointerId: event.pointerId,
+          startY: Number(event.clientY),
+          startScrollTop: Number(scroll.scrollTop),
+          maximumScroll,
+          thumbTravel: Math.max(1, trackRect.height - thumbRect.height),
+        };
+        scrollbar.setPointerCapture?.(event.pointerId);
+        return;
+      }
+      const direction = Number(event.clientY) < thumbRect.top ? -1 : 1;
+      scroll.scrollTop = Math.max(0, Math.min(
+        maximumScroll,
+        Number(scroll.scrollTop) + direction * Number(scroll.clientHeight) * .85,
+      ));
+      updateMetrics();
+    };
+    tacticalScrollbarPointerMoveHandler = (event) => {
+      const drag = tacticalScrollbarDragState;
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      event.preventDefault?.();
+      const delta = Number(event.clientY) - drag.startY;
+      scroll.scrollTop = Math.max(0, Math.min(
+        drag.maximumScroll,
+        drag.startScrollTop + (delta / drag.thumbTravel) * drag.maximumScroll,
+      ));
+      updateMetrics();
+    };
+    tacticalScrollbarPointerUpHandler = (event) => {
+      const drag = tacticalScrollbarDragState;
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      tacticalScrollbarDragState = null;
+      scrollbar.releasePointerCapture?.(event.pointerId);
+    };
+    tacticalScrollbarWheelHandler = (event) => {
+      event.preventDefault?.();
+      const maximumScroll = Math.max(0, Number(scroll.scrollHeight) - Number(scroll.clientHeight));
+      scroll.scrollTop = Math.max(0, Math.min(
+        maximumScroll,
+        Number(scroll.scrollTop) + Number(event.deltaY),
+      ));
+      updateMetrics();
+    };
+    scrollbar.addEventListener?.("pointerdown", tacticalScrollbarPointerDownHandler);
+    scrollbar.addEventListener?.("pointermove", tacticalScrollbarPointerMoveHandler);
+    scrollbar.addEventListener?.("pointerup", tacticalScrollbarPointerUpHandler);
+    scrollbar.addEventListener?.("pointercancel", tacticalScrollbarPointerUpHandler);
+    scrollbar.addEventListener?.("wheel", tacticalScrollbarWheelHandler, { passive: false });
+
+    navigationWheelNode = navigationBody;
+    navigationWheelHandler = (event) => {
+      event.preventDefault?.();
+      event.stopPropagation?.();
+    };
+    navigationWheelNode?.addEventListener?.("wheel", navigationWheelHandler, { passive: false });
+    updateMetrics();
+  };
+
+  const syncTacticalFooter = (aside, nav, navigationHead, navigationBody) => {
+    const root = document.documentElement;
+    const tactical = config.themeId === TACTICAL_THEME_ID;
+    root.classList.toggle("dream-sidebar-collapsed", tactical && !aside);
+
+    const nativeFooter = nav?.parentElement
+      ? [...nav.parentElement.children].find((node) =>
+        node !== nav && node.querySelector?.("button img")) || null
+      : null;
+    syncOwnedClass(SIDEBAR_NATIVE_FOOTER_CLASS, tactical ? [nativeFooter] : []);
+    const nativeFooterButtons = nativeFooter ? [...nativeFooter.querySelectorAll("button")] : [];
+    syncOwnedClass(
+      "dream-tactical-footer-extra-control",
+      tactical ? nativeFooterButtons.filter((button) => !button.querySelector?.("img")) : [],
+    );
+
+    let footer = document.getElementById(TACTICAL_FOOTER_ID);
+    if (!tactical) {
+      footer?.remove();
+      return;
+    }
+    if (!footer) {
+      footer = document.createElement("div");
+      footer.id = TACTICAL_FOOTER_ID;
+      footer.setAttribute("aria-hidden", "true");
+      const collapsedAvatar = document.createElement("img");
+      collapsedAvatar.classList.add("dream-footer-collapsed-avatar");
+      collapsedAvatar.alt = "";
+      const username = document.createElement("span");
+      username.classList.add("dream-footer-username");
+      const online = document.createElement("span");
+      online.classList.add("dream-footer-online");
+      online.textContent = "● ONLINE";
+      const center = document.createElement("span");
+      center.classList.add("dream-footer-center");
+      center.textContent = "****************************************";
+      const clock = document.createElement("span");
+      clock.classList.add("dream-footer-clock");
+      footer.appendChild(collapsedAvatar);
+      footer.appendChild(username);
+      footer.appendChild(online);
+      footer.appendChild(center);
+      footer.appendChild(clock);
+      document.body.appendChild(footer);
+    }
+
+    const avatar = nativeFooter?.querySelector?.("button img");
+    const profileButton = nativeFooterButtons.find((button) => button.querySelector?.("img")) || null;
+    const collapsedAvatar = footer.querySelector?.(".dream-footer-collapsed-avatar");
+    const avatarSource = avatar?.currentSrc || avatar?.src || "";
+    if (collapsedAvatar && avatarSource && collapsedAvatar.src !== avatarSource) {
+      collapsedAvatar.src = avatarSource;
+    }
+    const username = footer.querySelector?.(".dream-footer-username");
+    if (username) {
+      const rawName = `${profileButton?.innerText || profileButton?.textContent || ""}`
+        .replace(/\s+/g, " ")
+        .trim();
+      username.textContent = rawName;
+    }
+    const now = new Date();
+    const offsetMinutes = -now.getTimezoneOffset();
+    const offsetSign = offsetMinutes >= 0 ? "+" : "-";
+    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+    const offsetRemainder = Math.abs(offsetMinutes) % 60;
+    const offset = offsetRemainder
+      ? `${offsetSign}${offsetHours}:${String(offsetRemainder).padStart(2, "0")}`
+      : `${offsetSign}${offsetHours}`;
+    const clock = footer.querySelector?.(".dream-footer-clock");
+    if (clock) {
+      clock.textContent = `GMT${offset}:${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()} ` +
+        `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    }
+
+    const asideWidth = Number(aside?.getBoundingClientRect?.().width);
+    if (Number.isFinite(asideWidth) && asideWidth > 0) {
+      root.style.setProperty("--dream-token-runtime-sidebar-width", `${asideWidth}px`);
+    } else if (tactical && !aside) {
+      root.style.setProperty("--dream-token-runtime-sidebar-width", "48px");
+    }
+    const navigationBodyHeight = measuredHeight(navigationBody);
+    const navigationHeadHeight = measuredHeight(navigationHead);
+    const panelGap = Number.parseFloat(
+      getComputedStyle(root).getPropertyValue?.("--dream-token-layout-panel-gap"),
+    ) || 8;
+    if (navigationBodyHeight > 0) {
+      root.style.setProperty(
+        "--dream-token-runtime-sidebar-navigation-body-height",
+        `${navigationBodyHeight}px`,
+      );
+    }
+    if (navigationHeadHeight > 0 && navigationBodyHeight > 0) {
+      root.style.setProperty(
+        "--dream-token-runtime-sidebar-project-frame-top",
+        `${navigationHeadHeight + navigationBodyHeight + panelGap}px`,
+      );
+    }
+    const scroll = nav
+      ? [...nav.children].find((node) => node.classList?.contains?.("vertical-scroll-fade-mask"))
+      : null;
+    syncTacticalScrollbar(aside, scroll, navigationBody, navigationHeadHeight, navigationBodyHeight, panelGap);
+  };
+
+  const syncTacticalNavigationItems = (navigationBody) => {
+    const tactical = config.themeId === TACTICAL_THEME_ID;
+    const definitions = [
+      { match: "NEW TASK", label: "01 NEW_TASK", selected: true },
+      { match: "SCHEDULED", label: "02 SCHEDULED" },
+      { match: "PLUGINS", label: "03 PLUGINS" },
+      { match: "SITES", label: "04 SITES" },
+      { match: "CHAT", label: "05 CHAT" },
+    ];
+    const items = [];
+    const selected = [];
+    for (const button of navigationBody?.querySelectorAll?.("button, [role=\"button\"], a") || []) {
+      const label = `${button.textContent || ""}`.replace(/\s+/g, " ").trim().toUpperCase();
+      const definition = definitions.find((candidate) => label.includes(candidate.match));
+      if (!tactical || !definition) continue;
+      button.dataset.dreamTacticalNavLabel = definition.label;
+      items.push(button);
+      if (definition.selected) selected.push(button);
+    }
+    for (const button of document.querySelectorAll(".dream-tactical-navigation-item")) {
+      if (!items.includes(button)) delete button.dataset.dreamTacticalNavLabel;
+    }
+    syncOwnedClass("dream-tactical-navigation-item", tactical ? items : []);
+    syncOwnedClass("dream-tactical-navigation-new-task", tactical ? selected : []);
+  };
+
+  const syncTacticalProjectTree = (projects) => {
+    const tactical = config.themeId === TACTICAL_THEME_ID;
+    const items = [];
+    const folders = [];
+    for (const node of projects?.querySelectorAll?.("a, button, [role=\"button\"]") || []) {
+      const label = `${node.textContent || ""}`.replace(/\s+/g, " ").trim();
+      if (!label) continue;
+      const folder = Boolean(node.closest?.('[class~="group/cwd"]')) &&
+        !node.matches?.('[class~="group/cwd"] a, [class~="group/cwd"] button');
+      node.dataset.dreamProjectStatus = /done|completed|success/i.test(label)
+        ? "DONE" : (node.getAttribute?.("aria-current") ? "ACTIVE" : "OPEN");
+      items.push(node);
+      if (folder) folders.push(node);
+    }
+    syncOwnedClass("dream-project-tree-item", tactical ? items : []);
+    syncOwnedClass("dream-project-tree-folder", tactical ? folders : []);
+  };
+
+  const syncSidebarModules = () => {
+    const nav = document.querySelector("aside.app-shell-left-panel nav");
+    const navChildren = nav ? [...nav.children] : [];
+    const scroll = navChildren.find((node) =>
+      node.classList?.contains?.("vertical-scroll-fade-mask"));
+    let navigationHead = null;
+    let navigationBody = null;
+    let projects = null;
+    let tasks = null;
+
+    if (scroll) {
+      const scrollIndex = navChildren.indexOf(scroll);
+      navigationHead = navChildren
+        .slice(0, scrollIndex)
+        .reverse()
+        .find((node) => node.querySelector?.("button")) || null;
+
+      const titledRoots = [...new Set(
+        [...scroll.querySelectorAll('[class~="group/nav-section-title"]')]
+          .map((title) => directChildOf(title, scroll))
+          .filter(Boolean),
+      )];
+      projects = titledRoots.find((node) =>
+        node.querySelector?.('[class~="group/cwd"]')) || null;
+      tasks = titledRoots.find((node) =>
+        node !== projects &&
+        (node.matches?.("section") || node.querySelector?.(":scope > section"))) || null;
+      if (!projects) projects = titledRoots.find((node) => node !== tasks) || null;
+      if (!tasks) tasks = titledRoots.find((node) => node !== projects) || null;
+
+      const moduleIndexes = [projects, tasks]
+        .map((node) => [...scroll.children].indexOf(node))
+        .filter((index) => index >= 0);
+      const boundary = moduleIndexes.length ? Math.min(...moduleIndexes) : scroll.children.length;
+      navigationBody = [...scroll.children]
+        .slice(0, boundary)
+        .find((node) => node.querySelector?.("button")) || null;
+    }
+
+    syncOwnedClass("dream-sidebar-navigation-head", [navigationHead]);
+    syncOwnedClass("dream-sidebar-navigation-body", [navigationBody]);
+    syncTacticalNavigationItems(navigationBody);
+    syncOwnedClass("dream-sidebar-projects", [projects]);
+    syncTacticalProjectTree(projects);
+    syncOwnedClass("dream-sidebar-tasks", [tasks]);
+    syncTacticalFooter(
+      document.querySelector("aside.app-shell-left-panel"),
+      nav,
+      navigationHead,
+      navigationBody,
+    );
+  };
+
+  const syncMainLayout = () => {
+    const tactical = config.themeId === TACTICAL_THEME_ID;
+    const threadScroll = document.querySelector(".thread-scroll-container");
+    const composerSection = threadScroll?.querySelector?.('[data-thread-scroll-footer="true"]') || null;
+    const composerSurface = composerSection?.querySelector?.(".composer-surface-chrome") || null;
+    const editable = composerSurface?.querySelector?.('[data-codex-composer="true"]') || null;
+    const inputLine = editable?.parentElement?.parentElement || null;
+    const statusBar = composerSurface?.querySelector?.('[class*="_footer_"]') || null;
+
+    syncOwnedClass("dream-main-thread-scroll", tactical ? [threadScroll] : []);
+    syncOwnedClass("dream-main-composer-section", tactical ? [composerSection] : []);
+    syncOwnedClass("dream-composer-input-line", tactical ? [inputLine] : []);
+    syncOwnedClass("dream-composer-status-bar", tactical ? [statusBar] : []);
+  };
+
+  const syncTacticalRightRail = (shellMain) => {
+    const existing = document.getElementById(TACTICAL_RIGHT_RAIL_ID);
+    if (config.themeId !== TACTICAL_THEME_ID) {
+      existing?.remove();
+      return;
+    }
+    if (existing?.parentElement === shellMain) return;
+    existing?.remove();
+
+    const rail = document.createElement("aside");
+    rail.id = TACTICAL_RIGHT_RAIL_ID;
+    rail.setAttribute("aria-hidden", "true");
+    for (const label of ["UNDECIDE", "MONITOR"]) {
+      const module = document.createElement("section");
+      const title = document.createElement("div");
+      const body = document.createElement("div");
+      module.classList.add("dream-tactical-right-module");
+      title.classList.add("dream-tactical-right-title");
+      body.classList.add("dream-tactical-right-body");
+      title.textContent = label;
+      module.appendChild(title);
+      module.appendChild(body);
+      rail.appendChild(module);
+    }
+    shellMain.appendChild(rail);
+  };
+
+  const nativeBrandModuleHref = () => {
+    const link = document.querySelector(
+      'link[rel="modulepreload"][href*="/openai-blossom-"][href$=".js"]',
+    );
+    const href = typeof link?.href === "string" ? link.href : "";
+    return /^app:\/\/-\/assets\/openai-blossom-[a-z0-9_-]+\.js$/i.test(href) ? href : null;
+  };
+
+  const loadNativeBrandPath = async (href) => {
+    if (typeof fetch !== "function") return null;
+    try {
+      const source = await (await fetch(href)).text();
+      if (source.length < 256 || source.length > 20000) return null;
+      const match = /viewBox:`0 0 21 21`[\s\S]{0,512}?children:[\s\S]{0,256}?d:`([^`]+)`,fill:`currentColor`/.exec(source);
+      const path = match?.[1] || "";
+      if (path.length < 500 || path.length > 16000) return null;
+      if (!/^M[MmLlHhVvCcSsQqTtAaZzEe0-9+.,\-\s]+$/.test(path)) return null;
+      return path;
+    } catch {
+      return null;
+    }
+  };
+
+  const syncTacticalBrandMark = (shellMain) => {
+    const existing = document.getElementById(BRAND_MARK_ID);
+    if (config.themeId !== TACTICAL_THEME_ID || shellMain.classList?.contains?.("dream-home-shell")) {
+      existing?.remove();
+      return;
+    }
+    if (!nativeBrandPath) {
+      const href = nativeBrandModuleHref();
+      if (href && !brandLoadPromise && Date.now() >= brandRetryAfter) {
+        brandLoadPromise = loadNativeBrandPath(href).then((path) => {
+          brandLoadPromise = null;
+          const state = window[STATE_KEY];
+          if (state?.installToken !== installToken || window.__CODEX_DREAM_SKIN_DISABLED__) return;
+          if (!path) {
+            brandRetryAfter = Date.now() + 5000;
+            return;
+          }
+          nativeBrandPath = path;
+          brandRetryAfter = 0;
+          ensure();
+        });
+      }
+      return;
+    }
+    if (existing?.parentElement === shellMain) return;
+    existing?.remove();
+    try {
+      const mark = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      mark.id = BRAND_MARK_ID;
+      mark.setAttribute("viewBox", "0 0 21 21");
+      mark.setAttribute("aria-hidden", "true");
+      mark.setAttribute("focusable", "false");
+      path.setAttribute("d", nativeBrandPath);
+      path.setAttribute("fill", "currentColor");
+      mark.appendChild(path);
+      shellMain.appendChild(mark);
+    } catch {}
   };
 
   const applyProfile = (root) => {
@@ -298,7 +1001,9 @@
       ? profile.aspect >= 2.25 ? "banner" : "ambient"
       : config.taskMode;
     const accent = config.accent || `rgb(${profile.accent.join(" ")})`;
-    const accentInk = luminance(...profile.accent) > .42 ? "rgb(26 24 28)" : "rgb(250 248 251)";
+    const accentInk = config.tokenProperties[TOKEN_PROPERTY_MAP.colors.canvas] ||
+      (luminance(...profile.accent) > .42 ? "rgb(26 24 28)" : "rgb(250 248 251)");
+    root.setAttribute?.(THEME_ATTRIBUTE, config.themeId);
     root.classList.toggle("dream-theme-light", appearance === "light");
     root.classList.toggle("dream-theme-dark", appearance === "dark");
     root.classList.toggle("dream-art-wide", profile.aspect >= 1.75);
@@ -316,6 +1021,10 @@
     root.style.setProperty("--dream-art-position", `${Math.round(focusX * 100)}% ${Math.round(focusY * 100)}%`);
     root.style.setProperty("--dream-focus-x", String(focusX));
     root.style.setProperty("--dream-focus-y", String(focusY));
+    for (const property of TOKEN_PROPERTIES) root.style.removeProperty(property);
+    for (const [property, tokenValue] of Object.entries(config.tokenProperties)) {
+      root.style.setProperty(property, tokenValue);
+    }
     root.style.setProperty("--dream-accent", accent);
     root.style.setProperty("--dream-accent-ink", accentInk);
     root.style.setProperty("--dream-image-luma", profile.luma.toFixed(3));
@@ -348,9 +1057,9 @@
       style.id = STYLE_ID;
       (document.head || root).appendChild(style);
     }
-    if (style.dataset.dreamVersion !== "3") {
+    if (style.dataset.dreamVersion !== "5") {
       style.textContent = cssText;
-      style.dataset.dreamVersion = "3";
+      style.dataset.dreamVersion = "5";
     }
 
     const home = document.querySelector('[role="main"]:has([data-testid="home-icon"])');
@@ -366,6 +1075,22 @@
     }
     for (const candidate of utilityBars) candidate.classList.add(HOME_UTILITY_CLASS);
     shellMain.classList.toggle("dream-home-shell", Boolean(home));
+    syncSummaryPanels();
+    syncTacticalTopBar();
+    syncSidebarModules();
+    syncMainLayout();
+    syncTacticalRightRail(shellMain);
+    syncTacticalBrandMark(shellMain);
+
+    const tacticalAside = config.themeId === TACTICAL_THEME_ID
+      ? document.querySelector("aside.app-shell-left-panel")
+      : null;
+    if (typeof ResizeObserver === "function" && tacticalAside !== layoutObservedAside) {
+      layoutObserver?.disconnect?.();
+      layoutObserver = tacticalAside ? new ResizeObserver(() => scheduleEnsure()) : null;
+      layoutObserver?.observe?.(tacticalAside);
+      layoutObservedAside = tacticalAside;
+    }
 
     let chrome = document.getElementById(CHROME_ID);
     if (!chrome || chrome.parentElement !== document.body) {
@@ -384,6 +1109,10 @@
     window.__CODEX_DREAM_SKIN_DISABLED__ = true;
     clearSkinDom();
     state?.observer?.disconnect();
+    layoutObserver?.disconnect?.();
+    layoutObserver = null;
+    layoutObservedAside = null;
+    clearTacticalScrollbarBindings();
     if (state?.timer) clearInterval(state.timer);
     if (state?.scheduler?.timeout) clearTimeout(state.scheduler.timeout);
     if (state?.artUrl) URL.revokeObjectURL(state.artUrl);
@@ -411,7 +1140,7 @@
   });
   const timer = setInterval(ensure, 5000);
   window[STATE_KEY] = {
-    ensure, cleanup, observer, timer, scheduler, artUrl, profile, config, installToken, version: "1.2.0",
+    ensure, cleanup, observer, timer, scheduler, artUrl, profile, config, installToken, version: "1.5.0",
   };
   ensure();
   analyzeArt().then((result) => {
@@ -421,5 +1150,5 @@
     state.profile = result;
     ensure();
   });
-  return { installed: true, version: "1.2.0", adaptive: true };
+  return { installed: true, version: "1.5.0", adaptive: true };
 })(__DREAM_CSS_JSON__, __DREAM_ART_JSON__, __DREAM_THEME_JSON__)

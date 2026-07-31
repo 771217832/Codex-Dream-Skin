@@ -1,0 +1,207 @@
+{
+  "output": "E:\\CodexUi\\windows\\docs\\Codex-Tactical-CSS-Quickstart.zh-CN.pptx",
+  "outputBytes": 2438855,
+  "slideCount": 19,
+  "slideSize": {
+    "width": 1280,
+    "height": 720
+  },
+  "previewDir": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2",
+  "previewPaths": [
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-01.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-02.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-03.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-04.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-05.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-06.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-07.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-08.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-09.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-10.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-11.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-12.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-13.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-14.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-15.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-16.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-17.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-18.png",
+    "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\preview\\final2\\slide-19.png"
+  ],
+  "layoutDir": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2",
+  "layoutResults": [
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-01.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-02.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-03.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-04.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-05.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-06.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-07.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-08.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-09.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-10.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-11.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-12.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-13.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-14.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-15.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-16.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-17.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-18.layout.json"
+    },
+    {
+      "layoutPath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\layout\\final2\\slide-19.layout.json"
+    }
+  ],
+  "slides": [
+    {
+      "index": 1,
+      "requestedSlideNumber": 1,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-01.mjs",
+      "exportName": "slide01"
+    },
+    {
+      "index": 2,
+      "requestedSlideNumber": 2,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-02.mjs",
+      "exportName": "slide02"
+    },
+    {
+      "index": 3,
+      "requestedSlideNumber": 3,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-03.mjs",
+      "exportName": "slide03"
+    },
+    {
+      "index": 4,
+      "requestedSlideNumber": 4,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-04.mjs",
+      "exportName": "slide04"
+    },
+    {
+      "index": 5,
+      "requestedSlideNumber": 5,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-05.mjs",
+      "exportName": "slide05"
+    },
+    {
+      "index": 6,
+      "requestedSlideNumber": 6,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-06.mjs",
+      "exportName": "slide06"
+    },
+    {
+      "index": 7,
+      "requestedSlideNumber": 7,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-07.mjs",
+      "exportName": "slide07"
+    },
+    {
+      "index": 8,
+      "requestedSlideNumber": 8,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-08.mjs",
+      "exportName": "slide08"
+    },
+    {
+      "index": 9,
+      "requestedSlideNumber": 9,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-09.mjs",
+      "exportName": "slide09"
+    },
+    {
+      "index": 10,
+      "requestedSlideNumber": 10,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-10.mjs",
+      "exportName": "slide10"
+    },
+    {
+      "index": 11,
+      "requestedSlideNumber": 11,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-11.mjs",
+      "exportName": "slide11"
+    },
+    {
+      "index": 12,
+      "requestedSlideNumber": 12,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-12.mjs",
+      "exportName": "slide12"
+    },
+    {
+      "index": 13,
+      "requestedSlideNumber": 13,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-13.mjs",
+      "exportName": "slide13"
+    },
+    {
+      "index": 14,
+      "requestedSlideNumber": 14,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-14.mjs",
+      "exportName": "slide14"
+    },
+    {
+      "index": 15,
+      "requestedSlideNumber": 15,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-15.mjs",
+      "exportName": "slide15"
+    },
+    {
+      "index": 16,
+      "requestedSlideNumber": 16,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-16.mjs",
+      "exportName": "slide16"
+    },
+    {
+      "index": 17,
+      "requestedSlideNumber": 17,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-17.mjs",
+      "exportName": "slide17"
+    },
+    {
+      "index": 18,
+      "requestedSlideNumber": 18,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-18.mjs",
+      "exportName": "slide18"
+    },
+    {
+      "index": 19,
+      "requestedSlideNumber": 19,
+      "modulePath": "E:\\CodexUi\\outputs\\019f8f8b-80db-7293-b3a4-76018971e3f0\\presentations\\tactical-css-quickstart\\slides\\slide-19.mjs",
+      "exportName": "slide19"
+    }
+  ]
+}

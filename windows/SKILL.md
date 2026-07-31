@@ -9,7 +9,7 @@ Apply a reversible renderer skin through Chromium DevTools Protocol while launch
 
 ## Workflow
 
-1. Install Node.js 22 or newer, close Codex, then run `scripts/install-dream-skin.ps1` once. The installer preserves the user's native appearance settings, seeds the Arina Hashimoto theme, copies the runtime to `%LOCALAPPDATA%\CodexDreamSkin\engine`, and creates launch/restore/tray shortcuts that do not depend on the source checkout.
+1. Install Node.js 22 or newer, close Codex, then run `scripts/install-dream-skin.ps1` once. The installer preserves the user's native appearance settings, keeps Arina Hashimoto as the active theme, explicitly seeds the Arina, Gothic, and Codex Tactical CRT saved presets, copies the runtime to `%LOCALAPPDATA%\CodexDreamSkin\engine`, and creates launch/restore/tray shortcuts that do not depend on the source checkout.
 2. Use the `Codex Dream Skin` shortcut, or run `%LOCALAPPDATA%\CodexDreamSkin\engine\scripts\start-dream-skin.ps1`. The shortcut asks before restarting an already-open Codex app; CLI callers must explicitly add `-RestartExisting`.
 3. Run `scripts/verify-dream-skin.ps1 -ScreenshotPath <absolute-path>` after launch. Treat a missing continuous wallpaper, home shell, native composer, sidebar layer, or injection marker as failure. The native suggestion count is responsive and may be two to four.
 4. Inspect the screenshot against `references/qa-inventory.md`. Verify both the home screen and a normal task before signing off.
@@ -19,6 +19,8 @@ Apply a reversible renderer skin through Chromium DevTools Protocol while launch
 
 - Preserve the official executable, package signature, user threads, pets, plugins, and authentication state.
 - Theme images must be UI-free wallpapers. Never import a README screenshot, fake window, sidebar, card, composer, logo, or text baked into the bitmap.
+- Managed preset CSS must be selected from the validated theme ID, scoped to `data-dream-theme-id`, and sourced only from the explicit bundled allowlist. Do not scan theme directories for executable or injectable content.
+- Preserve the optional theme-token contract. Sanitize every token independently, keep legacy themes working, and remove theme attributes and token variables on pause, cleanup, auxiliary windows, and reinjection.
 - Paint one continuous 16:9 wallpaper across the full Codex window. Let the sidebar, main area, header, and composer act as coordinated readability layers; keep the home route expressive and task routes quieter.
 - `appearance: auto` follows the native computed `color-scheme` first and the system appearance only as a fallback. Image brightness may tune color and composition, but must not flip the user's shell mode; explicit `light` and `dark` remain authoritative.
 - Attach the "选择项目" treatment to Codex's real project-selector toolbar and keep the current project button clickable; never draw a disconnected replacement.
@@ -50,9 +52,11 @@ node --check assets\renderer-inject.js
 - `scripts/common-windows.ps1`: Store-package discovery, Node validation, managed runtime installation, port ownership, state, and process identity safety.
 - `scripts/config-utf8.ps1`: atomic UTF-8 configuration backup, selective restore, and explicit recovery.
 - `assets/dream-skin.css`: full visual layer.
+- `assets/presets/preset-codex-tactical-crt.css`: scoped Tactical CRT layer whose adjustable colors, strokes, radii, and CRT opacities come from theme tokens.
 - `assets/renderer-inject.js`: idempotent DOM integration and cleanup.
 - `assets/dream-reference.jpg`: pure 2560 × 1440 Arina Hashimoto wallpaper seeded as the default and as a saved theme; it contains no Codex UI.
 - `assets/theme.json`: shared adaptive theme contract for the seeded preset.
+- `presets/preset-codex-tactical-crt/`: Tactical CRT metadata, original UI-free 2560 × 1440 background, and asset provenance.
 - `scripts/theme-windows.ps1`: persistent active/saved theme store, safe image import, pause state, and preset seeding.
 - `scripts/tray-dream-skin.ps1`: Windows Forms tray for apply, pause, import, save, switch, and complete restore.
 - `references/qa-inventory.md`: required functional and visual signoff coverage.

@@ -78,6 +78,23 @@ Open `Codex Dream Skin - Tray` to:
 
 Import a UI-free wallpaper rather than a preview containing a window, sidebar, composer, text, or buttons. Images may be at most 16 MB, 16384 pixels on either side, and 50 million total pixels.
 
+### Codex Tactical CRT preset and design tokens
+
+After installation, `Codex Tactical CRT` appears under the tray's saved themes alongside Gothic; Arina remains the first-install active theme. Select the preset and choose reapply to enable it. The preset is dark-only and preserves Codex's native layout and controls while adding military CRT colors, hard instrument borders, typography, and pointer-transparent decoration. Its amber application header uses a taller instrument-console proportion, while the central task area carries a deep-green phosphor field and, when native geometry can be obtained safely, a low-intensity OpenAI phosphor mark.
+
+The sidebar keeps Codex's real data and interactions: `01.NAVIGATION` contains New task, Scheduled, Plugins, Stations, Pull requests, and Chats; `02.PROJECTS` contains projects and their real threads; and the central current-task panel is `03.MAIN_TASK`. The native bottom Tasks control remains an unnumbered utility area. The module headings and borders do not create fictional destinations or replace native controls.
+
+All adjustable Tactical CRT values live in the optional `tokens` object in `theme.json`. During development, edit [`presets/preset-codex-tactical-crt/theme.json`](./presets/preset-codex-tactical-crt/theme.json). After installation, edit `%LOCALAPPDATA%\CodexDreamSkin\themes\preset-codex-tactical-crt\theme.json`, then select and reapply that saved theme from the tray.
+
+- `colors` covers canvas, surfaces, text, accent, success, phosphor, and strong/default/subtle lines. `phosphor` controls both the central task area's deep-green field and the OpenAI phosphor mark. It accepts hex and restricted `rgb()`, `hsl()`, `oklch()`, or `oklab()` values; semicolons, braces, and CSS fragments are rejected.
+- `strokes` contains `subtle`, `default`, `strong`, and `focus` pixel values in the `0–50` range.
+- `radii` contains `panel` and `control` pixel values in the `0–16` range.
+- `effects` contains `scanlineOpacity`, `gridOpacity`, `vignetteOpacity`, and `brandOpacity` in the `0–0.35` range. `brandOpacity` independently controls the central phosphor mark's opacity.
+
+Validation is per field: an invalid value falls back only for that preset default, and unknown fields are ignored. `tokens.colors.accent` takes precedence over the legacy-compatible `palette.accent`. The managed stylesheet at [`assets/presets/preset-codex-tactical-crt.css`](./assets/presets/preset-codex-tactical-crt.css) reads every color, stroke, radius, and CRT opacity from these variables, so one token change updates the matching visual hierarchy.
+
+The wallpaper is an original UI-free background generated for this project with OpenAI image generation. The supplied screenshot informed style direction only and was not imported as pixel content. See [`presets/preset-codex-tactical-crt/ASSET.md`](./presets/preset-codex-tactical-crt/ASSET.md) for the prompt, provenance, and final dimensions. The OpenAI mark geometry is not distributed with the theme: at runtime, the renderer reads it only from the installed Codex application's same-origin `openai-blossom` module after strict validation of the resource URL, module size, and path data. If any check fails, the mark is omitted. This runtime reuse only matches the host application's native visual and does not imply OpenAI endorsement of the theme. Reinjecting Arina, Gothic, or a custom image removes the Tactical theme scope, token variables, type treatment, CRT overlay, and mark.
+
 ## Restore and remove shortcuts
 
 Restore the stock appearance. If Codex is running, confirm its closure and relaunch:

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "preset-codex-tactical-crt",
+  "name": "Codex Tactical CRT",
+  "image": "background.jpg",
+  "appearance": "dark",
+  "art": {
+    "focusX": 0.5,
+    "focusY": 0.5,
+    "safeArea": "none",
+    "taskMode": "ambient"
+  },
+  "palette": {
+    "accent": "#D7AD55"
+  },
+  "tokens": {
+    "colors": {
+      "canvas": "#030201",
+      "surface": "#080403",
+      "surfaceRaised": "#120804",
+      "textPrimary": "#E6D7B0",
+      "textSecondary": "#B8A477",
+      "accent": "#D7AD55",
+      "phosphor": "#49B81F",
+      "positive": "#48CB22",
+      "lineStrong": "rgb(195 116 18 / 0.94)",
+      "lineDefault": "rgb(195 116 18 / 0.78)",
+      "lineSubtle": "rgb(195 116 18 / 0.24)"
+    },
+    "strokes": {
+      "subtle": 1,
+      "default": 1,
+      "strong": 2,
+      "focus": 2
+    },
+    "radii": {
+      "panel": 0,
+      "control": 0
+    },
+    "effects": {
+      "scanlineOpacity": 0.16,
+      "gridOpacity": 0.08,
+      "vignetteOpacity": 0.28,
+      "brandOpacity": 0.13
+    }
+  }
+}

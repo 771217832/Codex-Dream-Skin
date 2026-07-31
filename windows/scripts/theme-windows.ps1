@@ -183,6 +183,42 @@ function Write-DreamSkinTheme {
   Write-DreamSkinUtf8FileAtomically -Path $themePath -Content ($json + "`r`n")
 }
 
+function Install-DreamSkinBundledPreset {
+  param(
+    [Parameter(Mandatory = $true)][string]$SkillRoot,
+    [Parameter(Mandatory = $true)][object]$Paths,
+    [Parameter(Mandatory = $true)][ValidateSet(
+      'preset-gothic-void-crusade',
+      'preset-codex-tactical-crt'
+    )][string]$PresetId
+  )
+  $sourceDirectory = Join-Path $SkillRoot (Join-Path 'presets' $PresetId)
+  $sourceTheme = Join-Path $sourceDirectory 'theme.json'
+  $sourceImage = Join-Path $sourceDirectory 'background.jpg'
+  $destinationDirectory = Join-Path $Paths.Saved $PresetId
+  $destinationTheme = Join-Path $destinationDirectory 'theme.json'
+
+  Assert-DreamSkinNoReparseComponents -Path $sourceDirectory
+  Assert-DreamSkinNoReparseComponents -Path $sourceTheme
+  Assert-DreamSkinNoReparseComponents -Path $sourceImage
+  Assert-DreamSkinNoReparseComponents -Path $destinationDirectory
+  Assert-DreamSkinNoReparseComponents -Path $destinationTheme
+
+  if (-not (Test-Path -LiteralPath $sourceTheme -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $sourceImage -PathType Leaf) -or
+    (Test-Path -LiteralPath $destinationTheme -PathType Leaf)) {
+    return
+  }
+
+  Assert-DreamSkinImageFile -Path $sourceImage
+  Ensure-DreamSkinManagedDirectory -Path $destinationDirectory -Root $Paths.Root
+  $destinationImage = Join-Path $destinationDirectory 'background.jpg'
+  Assert-DreamSkinNoReparseComponents -Path $destinationImage
+  Copy-Item -LiteralPath $sourceImage -Destination $destinationImage -Force
+  Assert-DreamSkinImageFile -Path $destinationImage
+  Copy-Item -LiteralPath $sourceTheme -Destination $destinationTheme -Force
+}
+
 function Initialize-DreamSkinThemeStore {
   param(
     [Parameter(Mandatory = $true)][string]$SkillRoot,
@@ -235,26 +271,12 @@ function Initialize-DreamSkinThemeStore {
     Assert-DreamSkinNoReparseComponents -Path $presetTheme
     Copy-Item -LiteralPath (Join-Path $assetRoot 'theme.json') -Destination $presetTheme -Force
   }
-  # Bundled Gothic Void Crusade (same pack as macOS presets/).
-  $gothicSource = Join-Path $SkillRoot 'presets\preset-gothic-void-crusade'
-  $gothicDirectory = Join-Path $paths.Saved 'preset-gothic-void-crusade'
-  $gothicTheme = Join-Path $gothicDirectory 'theme.json'
-  $gothicSourceTheme = Join-Path $gothicSource 'theme.json'
-  $gothicSourceImage = Join-Path $gothicSource 'background.jpg'
-  Assert-DreamSkinNoReparseComponents -Path $gothicDirectory
-  Assert-DreamSkinNoReparseComponents -Path $gothicTheme
-  if ((Test-Path -LiteralPath $gothicSourceTheme -PathType Leaf) -and
-    (Test-Path -LiteralPath $gothicSourceImage -PathType Leaf) -and
-    -not (Test-Path -LiteralPath $gothicTheme -PathType Leaf)) {
-    Ensure-DreamSkinManagedDirectory -Path $gothicDirectory -Root $paths.Root
-    $gothicImage = Join-Path $gothicDirectory 'background.jpg'
-    Assert-DreamSkinNoReparseComponents -Path $gothicImage
-    Assert-DreamSkinImageFile -Path $gothicSourceImage
-    Copy-Item -LiteralPath $gothicSourceImage -Destination $gothicImage -Force
-    Assert-DreamSkinNoReparseComponents -Path $gothicImage
-    Assert-DreamSkinImageFile -Path $gothicImage
-    Assert-DreamSkinNoReparseComponents -Path $gothicTheme
-    Copy-Item -LiteralPath $gothicSourceTheme -Destination $gothicTheme -Force
+  # Explicit allowlist only: never discover or execute arbitrary preset folders.
+  foreach ($bundledPresetId in @(
+    'preset-gothic-void-crusade',
+    'preset-codex-tactical-crt'
+  )) {
+    Install-DreamSkinBundledPreset -SkillRoot $SkillRoot -Paths $paths -PresetId $bundledPresetId
   }
   $null = Read-DreamSkinTheme -ThemeDirectory $paths.Active
   return $paths

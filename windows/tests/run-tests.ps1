@@ -655,14 +655,33 @@ try {
   }
   $preseededThemes = @(Get-DreamSkinSavedThemes -StateRoot $themeStateRoot)
   $preseededIds = @($preseededThemes | ForEach-Object { $_.Id })
-  if ($preseededThemes.Count -lt 2 -or
+  if ($preseededThemes.Count -lt 3 -or
     $preseededIds -notcontains 'preset-arina-hashimoto' -or
-    $preseededIds -notcontains 'preset-gothic-void-crusade') {
-    throw 'Windows did not preseed both Arina Hashimoto and Gothic Void Crusade.'
+    $preseededIds -notcontains 'preset-gothic-void-crusade' -or
+    $preseededIds -notcontains 'preset-codex-tactical-crt') {
+    throw 'Windows did not preseed the explicit Arina, Gothic, and Tactical CRT allowlist.'
   }
   $gothicSeed = $preseededThemes | Where-Object { $_.Id -ceq 'preset-gothic-void-crusade' } | Select-Object -First 1
   if ($null -eq $gothicSeed -or $gothicSeed.Name -cne 'Gothic Void Crusade') {
     throw 'Gothic Void Crusade was not preseeded with the expected display name.'
+  }
+  $tacticalSeed = $preseededThemes | Where-Object { $_.Id -ceq 'preset-codex-tactical-crt' } | Select-Object -First 1
+  if ($null -eq $tacticalSeed -or $tacticalSeed.Name -cne 'Codex Tactical CRT') {
+    throw 'Codex Tactical CRT was not preseeded with the expected display name.'
+  }
+  $tacticalTheme = Read-DreamSkinTheme -ThemeDirectory $tacticalSeed.Path
+  if ($tacticalTheme.Theme.appearance -cne 'dark' -or
+    $tacticalTheme.Theme.art.safeArea -cne 'none' -or
+    $tacticalTheme.Theme.art.taskMode -cne 'ambient' -or
+    $tacticalTheme.Theme.tokens.colors.accent -cne '#D7AD55' -or
+    $tacticalTheme.Theme.tokens.colors.phosphor -cne '#49B81F' -or
+    $tacticalTheme.Theme.tokens.colors.canvas -cne '#030201' -or
+    $tacticalTheme.Theme.tokens.strokes.default -ne 1 -or
+    $tacticalTheme.Theme.tokens.strokes.strong -ne 2 -or
+    $tacticalTheme.Theme.tokens.radii.control -ne 0 -or
+    $tacticalTheme.Theme.tokens.effects.scanlineOpacity -ne 0.16 -or
+    $tacticalTheme.Theme.tokens.effects.brandOpacity -ne 0.13) {
+    throw 'Codex Tactical CRT did not preserve its appearance, art, and token contract.'
   }
   $updatedTheme = Set-DreamSkinActiveTheme -ImagePath (Join-Path $Root 'assets\dream-reference.jpg') `
     -Theme $null -Name '测试主题' -StateRoot $themeStateRoot
@@ -676,11 +695,11 @@ try {
   $null = Initialize-DreamSkinThemeStore -SkillRoot $Root -StateRoot $themeStateRoot
   $idempotentTheme = Read-DreamSkinTheme -ThemeDirectory $themePaths.Active
   $afterReinitCount = @(Get-DreamSkinSavedThemes -StateRoot $themeStateRoot).Count
-  if ($idempotentTheme.Theme.id -cne 'custom' -or $afterReinitCount -ne 2) {
+  if ($idempotentTheme.Theme.id -cne 'custom' -or $afterReinitCount -ne 3) {
     throw 'Theme-store initialization overwrote the active custom theme or duplicated its bundled presets.'
   }
   $savedTheme = Save-DreamSkinCurrentTheme -Name '已保存主题' -StateRoot $themeStateRoot
-  if ($savedTheme.Theme.name -cne '已保存主题' -or @(Get-DreamSkinSavedThemes -StateRoot $themeStateRoot).Count -ne 3) {
+  if ($savedTheme.Theme.name -cne '已保存主题' -or @(Get-DreamSkinSavedThemes -StateRoot $themeStateRoot).Count -ne 4) {
     throw 'Saved theme creation or discovery failed.'
   }
   $null = Use-DreamSkinSavedTheme -ThemeDirectory $savedTheme.Directory -StateRoot $themeStateRoot
@@ -913,12 +932,19 @@ try {
   $managedPayloadTest = Invoke-DreamSkinNative -FilePath $node.Path -ArgumentList @(
     (Join-Path $Root 'scripts\injector.mjs'), '--check-payload', '--theme-dir', $themePaths.Active)
   if ($managedPayloadTest.ExitCode -ne 0) { throw 'Managed theme payload validation failed.' }
+  $tacticalPayloadTest = Invoke-DreamSkinNative -FilePath $node.Path -ArgumentList @(
+    (Join-Path $Root 'scripts\injector.mjs'), '--check-payload', '--theme-dir',
+    (Join-Path $Root 'presets\preset-codex-tactical-crt'))
+  if ($tacticalPayloadTest.ExitCode -ne 0) { throw 'Tactical CRT payload validation failed.' }
   $oversizedPayloadTest = Invoke-DreamSkinNative -FilePath $node.Path -ArgumentList @(
     (Join-Path $Root 'scripts\injector.mjs'), '--check-payload', '--theme-dir', $oversizedTheme)
   if ($oversizedPayloadTest.ExitCode -eq 0) { throw 'Node injector accepted an image over the 16 MB limit.' }
   $rendererTest = Invoke-DreamSkinNative -FilePath $node.Path -ArgumentList @(
     (Join-Path $PSScriptRoot 'renderer-inject.test.mjs'))
   if ($rendererTest.ExitCode -ne 0) { throw 'Renderer auxiliary-window regression test failed.' }
+  $tacticalPresetTest = Invoke-DreamSkinNative -FilePath $node.Path -ArgumentList @(
+    (Join-Path $PSScriptRoot 'tactical-preset.test.mjs'))
+  if ($tacticalPresetTest.ExitCode -ne 0) { throw 'Tactical CRT token-discipline regression test failed.' }
   $bootstrapTest = Invoke-DreamSkinNative -FilePath $node.Path -ArgumentList @(
     (Join-Path $PSScriptRoot 'injector-bootstrap.test.mjs'))
   if ($bootstrapTest.ExitCode -ne 0) { throw 'Injector early-bootstrap regression test failed.' }
