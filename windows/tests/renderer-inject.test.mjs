@@ -538,7 +538,7 @@ assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-sidebar-width"
 assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-sidebar-navigation-body-height"), "170px");
 assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-sidebar-project-frame-top"), "304px");
 assert.equal(sidebarModules.nodes.has("codex-dream-skin-project-scrollbar"), true,
-  "The Tactical preset must confine its scrollbar overlay to the Project module.");
+  "The Tactical preset must bind its scrollbar overlay to the Project module.");
 sidebarModules.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
 for (const [index, node] of originalNavChildren.entries()) {
   assert.equal(sidebarModules.sidebar.nav.children[index], node,
@@ -617,9 +617,12 @@ const rightRail = tacticalRightRail.nodes.get("codex-dream-skin-right-rail");
 assert.ok(rightRail, "The Tactical preset must render the Figma-aligned decorative right rail.");
 assert.equal(rightRail.parentElement, tacticalRightRail.shellMain);
 assert.equal(rightRail.getAttribute("aria-hidden"), "true");
-assert.equal(rightRail.children.length, 2);
-assert.deepEqual(rightRail.children.map((module) => module.children[0].textContent), ["UNDECIDE", "MONITOR"]);
-for (const module of rightRail.children) {
+const rightRailModules = rightRail.children.filter((node) =>
+  node.classList.contains("dream-tactical-right-module"));
+assert.equal(rightRailModules.length, 2);
+assert.ok(rightRail.children.some((node) => node.classList.contains("dream-tactical-right-resizer")));
+assert.deepEqual(rightRailModules.map((module) => module.children[0].textContent), ["UNDECIDE", "MONITOR"]);
+for (const module of rightRailModules) {
   const body = module.children[1];
   assert.equal(body.classList.contains("dream-tactical-right-body"), true);
   assert.equal(body.children.length, 0, "Right-rail module bodies must remain empty.");

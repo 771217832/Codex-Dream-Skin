@@ -160,10 +160,12 @@ assert.match(css, /\.dream-footer-online\s*\{[\s\S]*?--dream-token-color-positiv
 assert.match(css, /\.dream-footer-clock\s*\{[\s\S]*?right:/i);
 assert.match(css, /\.dream-tactical-footer-extra-control\s*\{[\s\S]*?display:\s*none/i);
 assert.match(css, /#codex-dream-skin-right-rail\s*\{[\s\S]*?display:\s*none/i);
-assert.match(css, /@media \(min-width:\s*1500px\)[\s\S]*?#codex-dream-skin-right-rail\s*\{[\s\S]*?display:\s*grid/i);
+assert.match(css, /@media \(min-width:\s*1180px\)[\s\S]*?#codex-dream-skin-right-rail\s*\{[\s\S]*?display:\s*grid/i);
 assert.match(css, /\.dream-tactical-right-body\s*\{[\s\S]*?background:\s*var\(--dream-token-color-canvas\)/i);
 assert.match(css, /\.dream-sidebar-native-footer\s*\{[\s\S]*?position:\s*fixed/i);
 assert.match(css, /vertical-scroll-fade-mask\s*\{[\s\S]*?scrollbar-width:\s*none\s*!important/i);
+assert.match(css, /vertical-scroll-fade-mask\s*\{[\s\S]*?overflow:\s*hidden\s*!important/i);
+assert.match(css, /\.dream-sidebar-projects\s*\{[\s\S]*?overflow-y:\s*auto\s*!important/i);
 assert.match(css, /#codex-dream-skin-project-scrollbar\s*\{[\s\S]*?position:\s*fixed[\s\S]*?pointer-events:\s*auto[\s\S]*?touch-action:\s*none/i);
 assert.match(css, /\.dream-sidebar-projects\s*>\s*div\s*>\s*\[class~="group\/nav-section-title"\]\s*\{[\s\S]*?width:\s*100%[\s\S]*?margin-inline:\s*0/i);
 assert.match(css, /\.dream-tactical-topbar-hidden\s*\{[\s\S]*?display:\s*none/i);

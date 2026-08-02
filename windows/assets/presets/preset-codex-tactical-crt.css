@@ -65,7 +65,7 @@
   --dream-token-layout-brand-bottom: 190px;
   --dream-token-layout-sidebar-native-offset: 8px;
   --dream-token-layout-left-rail-width: clamp(320px, 19.6vw, 368px);
-  --dream-token-layout-right-rail-width: clamp(330px, 20.9vw, 392px);
+  --dream-token-layout-right-rail-width: var(--dream-token-runtime-right-rail-width, clamp(330px, 20.9vw, 392px));
   --dream-token-layout-right-rail-total: calc(var(--dream-token-layout-right-rail-width) + var(--dream-token-layout-panel-gap));
 
   --dream-token-color-accent-soft: color-mix(in srgb, var(--dream-token-color-accent) 13%, var(--dream-token-color-transparent));
@@ -394,7 +394,7 @@
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel::before {
   content: "";
-  display: block;
+  display: none;
   position: absolute;
   z-index: 0;
   inset: var(--dream-token-runtime-sidebar-project-frame-top, 448px) 0 0 0;
@@ -412,15 +412,22 @@
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel nav,
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel [class*="bg-token-side-bar"] {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
   color: var(--dream-token-color-text-primary) !important;
   background: var(--dream-token-color-transparent) !important;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel nav > .vertical-scroll-fade-mask {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
   gap: var(--dream-token-layout-panel-gap) !important;
   margin-top: 0 !important;
   padding-block: 0 !important;
-  overflow-y: auto !important;
+  overflow: hidden !important;
   scrollbar-width: none !important;
   contain: layout paint;
   scrollbar-width: auto !important;
@@ -508,11 +515,17 @@
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects {
   box-sizing: border-box;
+  position: relative;
   width: 100%;
-  padding-right: 0 !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: none !important;
+  padding-inline: 0 !important;
   color: var(--dream-token-color-text-primary) !important;
   background: var(--dream-token-background-panel) !important;
-  border: none !important;
+  border: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong) !important;
   border-radius: var(--dream-token-radius-panel) !important;
   box-shadow: var(--dream-token-shadow-none) !important;
   filter: none !important;
@@ -523,7 +536,7 @@
   box-sizing: border-box;
   position: sticky;
   z-index: 1;
-  top: calc(var(--dream-token-runtime-sidebar-navigation-body-height, 176px) + var(--dream-token-layout-panel-gap) + var(--dream-token-stroke-strong));
+  top: 0;
   width: 100%;
   margin-inline: 0;
   height: var(--dream-token-layout-project-title-height);
@@ -536,6 +549,11 @@
   background: var(--dream-token-color-line-strong) !important;
   border-bottom: var(--dream-token-stroke-default) solid var(--dream-token-color-line-default) !important;
   text-shadow: var(--dream-token-shadow-none);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects > div > [class~="group/nav-section-title"]::after {
@@ -575,6 +593,7 @@
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-tasks {
+  flex: 0 0 auto !important;
   box-sizing: border-box;
   width: 100%;
   padding-right: calc(var(--dream-token-layout-scrollbar) + (var(--dream-token-layout-scrollbar-inset) * 2)) !important;
@@ -1137,6 +1156,25 @@
   pointer-events: none;
 }
 
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-right-resizer {
+  position: absolute;
+  z-index: 4;
+  inset: 0 auto 0 calc(var(--dream-token-stroke-strong) * -2);
+  width: calc(var(--dream-token-stroke-strong) * 4);
+  pointer-events: auto;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-right-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 50%;
+  width: var(--dream-token-stroke-default);
+  background: var(--dream-token-color-line-strong);
+  opacity: var(--dream-token-effect-visible-opacity);
+}
+
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-right-module {
   box-sizing: border-box;
   min-height: 0;
@@ -1193,9 +1231,102 @@
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-right-body {
+  box-sizing: border-box;
+  position: relative;
+  overflow: auto;
   min-height: 0;
+  padding: 12px;
   background: var(--dream-token-color-canvas);
   box-shadow: var(--dream-token-shadow-panel);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-no-signal {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--dream-token-color-accent);
+  font: 700 26px/1 var(--dream-token-font-chrome);
+  letter-spacing: .08em;
+  text-shadow: var(--dream-token-shadow-text);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-heading {
+  padding-bottom: 8px;
+  color: var(--dream-token-color-accent);
+  border-bottom: var(--dream-token-stroke-default) solid var(--dream-token-color-line-default);
+  font: 700 14px/1 var(--dream-token-font-chrome);
+  letter-spacing: .08em;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-content {
+  margin: 10px 0 0;
+  padding: 0;
+  overflow: visible;
+  color: var(--dream-token-color-text-primary);
+  background: var(--dream-token-color-transparent);
+  border: none;
+  font: 14px/1.45 var(--dream-token-font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-right-body:has(.dream-tactical-detail-mirror),
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-right-body:has(.dream-tactical-detail-code) {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 0;
+  overflow: hidden;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-transcript {
+  max-height: 96px;
+  padding: 8px 10px;
+  overflow: auto;
+  color: var(--dream-token-color-text-primary);
+  background: var(--dream-token-background-panel-raised);
+  border-bottom: var(--dream-token-stroke-default) solid var(--dream-token-color-line-default);
+  font: 13px/1.35 var(--dream-token-font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-code {
+  min-height: 0;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  color: var(--dream-token-color-text-primary);
+  background: var(--dream-token-color-canvas);
+  border: none;
+  font: 14px/1.45 var(--dream-token-font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-native-detail-source {
+  display: none !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-mirror {
+  position: relative !important;
+  inset: auto !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  color: var(--dream-token-color-text-primary) !important;
+  background: var(--dream-token-color-canvas) !important;
+  border: none !important;
+  box-shadow: var(--dream-token-shadow-none) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-mirror > div {
+  height: 100% !important;
+  min-height: 0 !important;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [role="dialog"],
@@ -1332,8 +1463,24 @@
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects {
   flex: 1 1 auto !important;
   min-height: 0 !important;
+  isolation: isolate;
   border: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong) !important;
-  border-top: none !important;
+  box-shadow: inset 0 calc(var(--dream-token-stroke-strong) * -1) 0 var(--dream-token-color-line-strong) !important;
+}
+
+/* Keep the Project lower edge above virtualized rows at every scroll position. */
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects::after {
+  display: none;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] #codex-dream-skin-project-bottom-frame {
+  position: fixed;
+  z-index: 30;
+  display: block;
+  box-sizing: border-box;
+  pointer-events: none;
+  background: var(--dream-token-color-line-strong);
+  box-shadow: var(--dream-token-shadow-none);
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] main.main-surface > header.app-header-tint,
@@ -1372,45 +1519,6 @@
   border: none !important;
   outline: none !important;
   box-shadow: var(--dream-token-shadow-none) !important;
-}
-
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects .dream-project-tree-item {
-  position: relative !important;
-  min-height: 28px !important;
-  margin-left: 24px !important;
-  padding-left: 18px !important;
-  border: none !important;
-  border-radius: var(--dream-token-radius-panel) !important;
-  box-shadow: var(--dream-token-shadow-none) !important;
-}
-
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects .dream-project-tree-item::before {
-  content: "";
-  position: absolute;
-  inset: -12px auto -12px 0;
-  width: 14px;
-  border-left: var(--dream-token-stroke-default) solid var(--dream-token-color-line-default);
-  border-bottom: var(--dream-token-stroke-default) solid var(--dream-token-color-line-default);
-  pointer-events: none;
-}
-
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects .dream-project-tree-item::after {
-  content: "[" attr(data-dream-project-status) "]";
-  margin-left: 8px;
-  color: var(--dream-token-color-positive);
-  font: 700 13px/1 var(--dream-token-font-chrome);
-  letter-spacing: .04em;
-}
-
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects .dream-project-tree-folder {
-  margin-left: 0 !important;
-  padding-left: 28px !important;
-  color: var(--dream-token-color-accent) !important;
-  font-weight: 700 !important;
-}
-
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects .dream-project-tree-folder::after {
-  content: "";
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] code,
@@ -1472,13 +1580,204 @@
   background: var(--dream-token-background-screen-grid);
 }
 
+/* These selectors survive a native menu-button rerender after a click. */
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"] {
+  position: relative !important;
+  box-sizing: border-box !important;
+  flex: 0 0 var(--dream-token-layout-menu-button-width) !important;
+  width: var(--dream-token-layout-menu-button-width) !important;
+  min-width: var(--dream-token-layout-menu-button-width) !important;
+  max-width: var(--dream-token-layout-menu-button-width) !important;
+  height: var(--dream-token-layout-header-control-height) !important;
+  min-height: var(--dream-token-layout-header-control-height) !important;
+  max-height: var(--dream-token-layout-header-control-height) !important;
+  margin: 0 !important;
+  padding: 8px 10px 7px calc(var(--dream-token-layout-menu-icon-size) + 18px) !important;
+  overflow: hidden !important;
+  color: var(--dream-token-color-text-primary) !important;
+  font-size: 17px !important;
+  line-height: 1 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+  background: var(--dream-token-color-canvas) !important;
+  border: var(--dream-token-stroke-strong) solid var(--dream-token-color-accent) !important;
+  border-radius: var(--dream-token-radius-control) !important;
+  box-shadow: var(--dream-token-shadow-none) !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"]::before,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"]::before,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"]::before,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"]::before {
+  content: "";
+  position: absolute;
+  inset: 7px auto 7px 7px;
+  width: var(--dream-token-layout-menu-icon-size);
+  background-color: var(--dream-token-color-accent);
+  pointer-events: none;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"]::after,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"]::after,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"]::after,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"]::after {
+  position: absolute;
+  inset: 7px 9px auto auto;
+  color: var(--dream-token-color-accent);
+  font: 700 14px/1 var(--dream-token-font-chrome);
+  letter-spacing: .08em;
+  pointer-events: none;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"]::before { -webkit-mask: var(--dream-token-module-icon-menu-file, none) center / contain no-repeat; mask: var(--dream-token-module-icon-menu-file, none) center / contain no-repeat; }
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"]::before { -webkit-mask: var(--dream-token-module-icon-menu-edit, none) center / contain no-repeat; mask: var(--dream-token-module-icon-menu-edit, none) center / contain no-repeat; }
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"]::before { -webkit-mask: var(--dream-token-module-icon-menu-view, none) center / contain no-repeat; mask: var(--dream-token-module-icon-menu-view, none) center / contain no-repeat; }
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"]::before { -webkit-mask: var(--dream-token-module-icon-menu-help, none) center / contain no-repeat; mask: var(--dream-token-module-icon-menu-help, none) center / contain no-repeat; }
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"]::after { content: "01"; }
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"]::after { content: "04"; }
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"]::after { content: "02"; }
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"]::after { content: "03"; }
+
+/* Codex replaces the native label subtree when a menu opens. Render every
+   visible label from the button itself so that replacement cannot alter type,
+   casing, or position. */
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"] {
+  color: var(--dream-token-color-transparent) !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  text-shadow: var(--dream-token-shadow-none) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"] > *,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"] > *,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"] > *,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"] > * {
+  visibility: hidden !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"] > .dream-tactical-menu-name,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"] > .dream-tactical-menu-name,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"] > .dream-tactical-menu-name,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"] > .dream-tactical-menu-name {
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  z-index: 2;
+  display: block;
+  visibility: visible !important;
+  color: var(--dream-token-color-text-primary) !important;
+  font: 700 17px/1 var(--dream-token-font-chrome);
+  letter-spacing: .08em;
+  pointer-events: none;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"]::after,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"]::after,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"]::after,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"]::after {
+  inset: 7px 9px auto auto;
+  display: block;
+  color: var(--dream-token-color-accent);
+  font: 700 14px/1 var(--dream-token-font-chrome);
+  letter-spacing: .08em;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"]::after { content: "01"; }
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"]::after { content: "04"; }
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"]::after { content: "02"; }
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"]::after { content: "03"; }
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="File"]:hover::after,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Edit"]:hover::after,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="View"]:hover::after,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button[aria-label="Help"]:hover::after {
+  color: var(--dream-token-color-ink);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] button:hover .dream-tactical-menu-name {
+  color: var(--dream-token-color-ink) !important;
+}
+
+/* Keep each top-menu control fixed while Codex marks it focused or open. */
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] .dream-tactical-menu-button:focus,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] .dream-tactical-menu-button:focus-visible,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] .dream-tactical-menu-button:active,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] .dream-tactical-menu-button[aria-expanded="true"],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [class~="group/application-menu-top-bar"] .dream-tactical-menu-button[data-state="open"] {
+  box-sizing: border-box !important;
+  flex: 0 0 var(--dream-token-layout-menu-button-width) !important;
+  width: var(--dream-token-layout-menu-button-width) !important;
+  min-width: var(--dream-token-layout-menu-button-width) !important;
+  max-width: var(--dream-token-layout-menu-button-width) !important;
+  height: var(--dream-token-layout-header-control-height) !important;
+  min-height: var(--dream-token-layout-header-control-height) !important;
+  max-height: var(--dream-token-layout-header-control-height) !important;
+  margin: 0 !important;
+  outline: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* New Task can live in the native navigation head, so render it exactly like the other items. */
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-navigation-head .dream-tactical-navigation-item {
+  position: relative !important;
+  min-height: 46px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  color: var(--dream-token-color-transparent) !important;
+  font-size: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-navigation-head .dream-tactical-navigation-item > *:not(svg),
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-navigation-head .dream-tactical-navigation-item > *:not(svg) * {
+  font-size: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-navigation-head .dream-tactical-navigation-item::after {
+  content: attr(data-dream-tactical-nav-label);
+  position: absolute;
+  inset: 0 auto 0 62px;
+  display: flex;
+  align-items: center;
+  color: var(--dream-token-color-text-primary);
+  font: 700 18px/1 var(--dream-token-font-chrome);
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-navigation-head .dream-tactical-navigation-item svg {
+  color: var(--dream-token-color-text-primary) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-navigation-head .dream-tactical-navigation-new-task {
+  color: var(--dream-token-color-ink) !important;
+  background: var(--dream-token-color-accent) !important;
+  border-color: var(--dream-token-color-accent-hot) !important;
+  box-shadow: var(--dream-token-shadow-none) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-navigation-head .dream-tactical-navigation-new-task *,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-navigation-head .dream-tactical-navigation-new-task::after {
+  color: var(--dream-token-color-ink) !important;
+  text-shadow: var(--dream-token-shadow-none) !important;
+}
+
 @media (max-width: 980px) {
   :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] {
     --dream-token-layout-active-shell-gap: var(--dream-token-layout-shell-gap-compact);
   }
 }
 
-@media (min-width: 1500px) {
+@media (min-width: 1180px) {
   :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel {
     width: var(--dream-token-layout-left-rail-width) !important;
     min-width: var(--dream-token-layout-left-rail-width) !important;
