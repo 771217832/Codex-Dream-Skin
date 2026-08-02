@@ -1,7 +1,9 @@
 import fs from "node:fs/promises";
 import { createHash } from "node:crypto";
+import { execFile as execFileCallback } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { readImageMetadata } from "./image-metadata.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
@@ -18,6 +20,9 @@ const PRESET_ASSET_MIME_TYPES = new Map([
   [".webp", "image/webp"],
 ]);
 const STRONG_THEME_AUDIT_MS = 30000;
+const CODEBURN_REFRESH_MS = 60000;
+const CODEBURN_TIMEOUT_MS = 30000;
+const TACTICAL_THEME_ID = "preset-codex-tactical-crt";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
 const BROWSER_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const OPERATION_UI_HOST_ID = "chatgpt-dream-skin-operation";
@@ -111,6 +116,7 @@ const OPERATION_UI_CSS = `
   }
 `;
 let operationSequence = 0;
+const execFile = promisify(execFileCallback);
 
 class CdpIdentityMismatchError extends Error {}
 
@@ -652,6 +658,58 @@ async function loadPayload(themeDir = path.join(root, "assets"), candidateTheme 
   };
 }
 
+async function loadCodeBurnStatus() {
+  const codeBurnArgs = ["status", "--format", "menubar-json", "--period", "30days", "--no-optimize"];
+  const [command, args] = process.platform === "win32"
+    ? [process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", `codeburn ${codeBurnArgs.join(" ")}`]]
+    : ["codeburn", codeBurnArgs];
+  const { stdout } = await execFile(command, args, {
+    timeout: CODEBURN_TIMEOUT_MS,
+    maxBuffer: 1024 * 1024,
+    windowsHide: true,
+  });
+  const status = JSON.parse(stdout);
+  const current = status?.current;
+  const currency = typeof status?.currency === "string" && /^[A-Z]{3}$/.test(status.currency)
+    ? status.currency : "USD";
+  const metric = (source, name) => {
+    const value = Number(source?.[name]);
+    if (!Number.isFinite(value) || value < 0) throw new Error(`CodeBurn returned invalid ${name}`);
+    return value;
+  };
+  const tokens = (source) => ["inputTokens", "outputTokens", "cacheReadTokens", "cacheWriteTokens"]
+    .reduce((total, name) => total + metric(source, name), 0);
+  const dayKey = (date) => [date.getFullYear(), `${date.getMonth() + 1}`.padStart(2, "0"), `${date.getDate()}`.padStart(2, "0")].join("-");
+  const dailyByDate = new Map((Array.isArray(status?.history?.daily) ? status.history.daily : [])
+    .filter((day) => /^\d{4}-\d{2}-\d{2}$/.test(day?.date || ""))
+    .map((day) => [day.date, { cost: metric(day, "cost"), tokens: tokens(day) }]));
+  const today = new Date();
+  const dailySpend = Array.from({ length: 30 }, (_, index) => {
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (29 - index));
+    const entry = dailyByDate.get(dayKey(date)) || { cost: 0, tokens: 0 };
+    return { date: dayKey(date), ...entry };
+  });
+  const peakTokens = Math.max(0, ...dailySpend.map((day) => day.tokens));
+  const activities = (Array.isArray(current?.topActivities) ? current.topActivities : []).slice(0, 5)
+    .map((activity) => ({
+      name: typeof activity?.name === "string" ? activity.name.slice(0, 32) : "UNKNOWN",
+      cost: metric(activity, "cost"),
+      turns: metric(activity, "turns"),
+      oneShotRate: Number.isFinite(Number(activity?.oneShotRate)) ? Number(activity.oneShotRate) : null,
+    }));
+  return {
+    currency,
+    activities,
+    tokens: {
+      total: tokens(current),
+      average: tokens(current) / 30,
+      peak: peakTokens,
+      yesterday: dailySpend.at(-2)?.tokens || 0,
+    },
+    dailySpend,
+  };
+}
+
 async function fileExists(filePath) {
   if (!filePath) return false;
   try {
@@ -736,6 +794,12 @@ async function connectCodexTargets(port, timeoutMs, expectedBrowserId) {
 
 async function applyToSession(session, payload) {
   return session.evaluate(payload);
+}
+
+async function applyCodeBurnStatus(session, status) {
+  return session.evaluate(
+    `window.__CODEX_DREAM_SKIN_CODEBURN__=${JSON.stringify(status)};window.__CODEX_DREAM_SKIN_STATE__?.ensure?.();`,
+  );
 }
 
 export function earlyPayloadFor(payload, revision) {
@@ -1267,6 +1331,9 @@ async function runWatch(options) {
   let lastListErrorLogAt = 0;
   let lastThemeErrorLogAt = 0;
   let lastStrongThemeAuditAt = 0;
+  let lastCodeBurnAt = 0;
+  let lastCodeBurnErrorLogAt = 0;
+  let codeBurnStatus = null;
   let loadedPayload = null;
   let paused = false;
   const stop = () => { stopping = true; };
@@ -1419,6 +1486,20 @@ async function runWatch(options) {
         }
       }
 
+      const now = Date.now();
+      if (!paused && loadedPayload.theme.id === TACTICAL_THEME_ID && now - lastCodeBurnAt >= CODEBURN_REFRESH_MS) {
+        lastCodeBurnAt = now;
+        try {
+          codeBurnStatus = await loadCodeBurnStatus();
+          await Promise.all([...sessions.values()].map((session) => applyCodeBurnStatus(session, codeBurnStatus)));
+        } catch (error) {
+          if (now - lastCodeBurnErrorLogAt >= CODEBURN_REFRESH_MS) {
+            console.error(`[dream-skin] CodeBurn refresh failed: ${error.message}`);
+            lastCodeBurnErrorLogAt = now;
+          }
+        }
+      }
+
       for (const target of targets) {
         if (identityAnchor.closed) break;
         if (sessions.has(target.id)) continue;
@@ -1464,6 +1545,7 @@ async function runWatch(options) {
           if (paused) await removeFromSession(session);
           else if (!earlyApplied) await applyToSession(session, loadedPayload.payload);
           sessions.set(target.id, session);
+          if (!paused && codeBurnStatus) await applyCodeBurnStatus(session, codeBurnStatus);
           if (earlyScriptId) earlyScripts.set(target.id, earlyScriptId);
           targetFailures.delete(target.id);
           console.log(`[dream-skin] injected target ${target.id}`);

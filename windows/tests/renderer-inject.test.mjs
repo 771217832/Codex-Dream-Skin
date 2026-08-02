@@ -110,6 +110,11 @@ function createFixture({
         if (child.id) nodes.set(child.id, child);
         return child;
       },
+      replaceChildren(...children) {
+        for (const child of node.children) child.parentElement = null;
+        node.children = [];
+        for (const child of children) node.appendChild(child);
+      },
       getAttribute(name) { return attributes.get(name) ?? null; },
       setAttribute(name, value) { attributes.set(name, String(value)); },
       addEventListener(type, listener) {
@@ -612,6 +617,12 @@ for (const button of topBarButtons) {
 }
 
 const tacticalRightRail = createFixture({ shellPresent: true });
+tacticalRightRail.context.window.__CODEX_DREAM_SKIN_CODEBURN__ = {
+  currency: "USD",
+  activities: [{ name: "Coding", cost: 13.44, turns: 215, oneShotRate: 1 }],
+  tokens: { total: 24630747, average: 821025, peak: 24630747, yesterday: 0 },
+  dailySpend: Array.from({ length: 30 }, (_, index) => ({ date: `2026-08-${`${index + 1}`.padStart(2, "0")}`, cost: index === 29 ? 13.44 : 0 })),
+};
 vm.runInNewContext(buildPayload({ id: "preset-codex-tactical-crt" }), tacticalRightRail.context);
 const rightRail = tacticalRightRail.nodes.get("codex-dream-skin-right-rail");
 assert.ok(rightRail, "The Tactical preset must render the Figma-aligned decorative right rail.");
@@ -625,9 +636,13 @@ assert.deepEqual(rightRailModules.map((module) => module.children[0].textContent
 for (const module of rightRailModules) {
   const body = module.children[1];
   assert.equal(body.classList.contains("dream-tactical-right-body"), true);
-  assert.equal(body.children.length, 0, "Right-rail module bodies must remain empty.");
-  assert.equal(body.textContent, "");
 }
+const monitorModule = rightRailModules.find((module) => module.dataset.dreamTacticalModule === "monitor");
+assert.equal(monitorModule.children[1].children[0].classList.contains("dream-codeburn-monitor"), true);
+assert.equal(monitorModule.children[1].children[0].children.length, 3,
+  "CodeBurn monitor must render activity, Token, and daily-spend sections.");
+assert.equal(monitorModule.children[1].children[0].children[2].children[2].children.length, 6,
+  "Daily spend must label every six days plus the final day.");
 tacticalRightRail.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
 assert.equal(tacticalRightRail.nodes.get("codex-dream-skin-right-rail"), rightRail,
   "Repeated ensure passes must preserve the right rail.");

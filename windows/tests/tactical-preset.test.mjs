@@ -162,12 +162,19 @@ assert.match(css, /\.dream-tactical-footer-extra-control\s*\{[\s\S]*?display:\s*
 assert.match(css, /#codex-dream-skin-right-rail\s*\{[\s\S]*?display:\s*none/i);
 assert.match(css, /@media \(min-width:\s*1180px\)[\s\S]*?#codex-dream-skin-right-rail\s*\{[\s\S]*?display:\s*grid/i);
 assert.match(css, /\.dream-tactical-right-body\s*\{[\s\S]*?background:\s*var\(--dream-token-color-canvas\)/i);
+assert.match(css, /\.dream-codeburn-monitor\s*\{[\s\S]*?display:\s*grid/i);
+assert.match(css, /\.dream-codeburn-table\s+\.dream-codeburn-header\s*\{[\s\S]*?background:\s*var\(--dream-token-color-accent\)/i);
+assert.match(css, /\.dream-codeburn-bars\s*\{[\s\S]*?grid-template-columns:\s*repeat\(30/i);
+assert.match(css, /\.dream-codeburn-axis\s*\{[\s\S]*?grid-template-columns:\s*repeat\(30/i);
 assert.match(css, /\.dream-sidebar-native-footer\s*\{[\s\S]*?position:\s*fixed/i);
 assert.match(css, /vertical-scroll-fade-mask\s*\{[\s\S]*?scrollbar-width:\s*none\s*!important/i);
 assert.match(css, /vertical-scroll-fade-mask\s*\{[\s\S]*?overflow:\s*hidden\s*!important/i);
 assert.match(css, /\.dream-sidebar-projects\s*\{[\s\S]*?overflow-y:\s*auto\s*!important/i);
 assert.match(css, /#codex-dream-skin-project-scrollbar\s*\{[\s\S]*?position:\s*fixed[\s\S]*?pointer-events:\s*auto[\s\S]*?touch-action:\s*none/i);
 assert.match(css, /\.dream-sidebar-projects\s*>\s*div\s*>\s*\[class~="group\/nav-section-title"\]\s*\{[\s\S]*?width:\s*100%[\s\S]*?margin-inline:\s*0/i);
+assert.match(css, /\[data-app-action-sidebar-project-list-id\]::before\s*\{[\s\S]*?--dream-token-color-line-default/i);
+assert.match(css, /\[data-app-action-sidebar-thread-row\]::after\s*\{[\s\S]*?content:\s*"\[DONE\]"/i);
+assert.match(css, /:has\(button\[aria-label="Stop"\]:not\(\[disabled\]\):not\(\[aria-disabled="true"\]\)\)[\s\S]*?\[data-app-action-sidebar-thread-active="true"\]::after\s*\{[\s\S]*?\[WORKING\][\s\S]*?\[LIVE\] IN PROGRESS/i);
 assert.match(css, /\.dream-tactical-topbar-hidden\s*\{[\s\S]*?display:\s*none/i);
 assert.match(css, /\.dream-tactical-menu-button::before\s*\{[\s\S]*?--dream-token-layout-menu-icon-size/i);
 assert.match(css, /--dream-token-module-icon-navigation:\s*url\("\.\.\/icons\/gps-line\.svg"\)/i);
@@ -196,11 +203,17 @@ assert.match(css, /#codex-dream-skin-project-scrollbar\s*\{[\s\S]*?display:\s*no
 assert.match(injectorSource, /inlineManagedPresetAssetUrls\(css, realPresetPath\)/i);
 assert.match(injectorSource, /data:\$\{mime\};base64/i);
 assert.match(css, /\.dream-main-composer-section\s*\{[\s\S]*?position:\s*sticky\s*!important[\s\S]*?min-height:\s*118px[\s\S]*?max-height:\s*30%/i);
+assert.match(css, /\.dream-main-composer-section\s*\{[\s\S]*?overflow:\s*visible\s*!important/i);
 assert.match(css, /\.dream-main-composer-section::before\s*\{[\s\S]*?content:\s*none/i);
 assert.match(css, /\.dream-main-composer-section::after\s*\{[\s\S]*?content:\s*none/i);
+assert.match(css, /\.dream-composer-input-line\s*\{[\s\S]*?overflow:\s*visible\s*!important/i);
+assert.match(css, /\.composer-surface-chrome\s*\{[\s\S]*?overflow:\s*visible\s*!important/i);
 assert.match(css, /\.dream-composer-input-line::before\s*\{[\s\S]*?content:\s*">:"/i);
 assert.match(css, /\.dream-composer-status-bar\s*\{[\s\S]*?border-top:/i);
 assert.match(css, /\.composer-surface-chrome\s*,[\s\S]*?border:\s*none[\s\S]*?box-shadow:\s*var\(--dream-token-shadow-none\)/i);
+assert.match(css, /\[data-message-author-role="user"\] \*::before[\s\S]*?outline:\s*none\s*!important/i);
+assert.match(css, /\[data-user-message-bubble="true"\]\s*\{[\s\S]*?box-shadow:\s*var\(--dream-token-shadow-none\)/i);
+assert.match(css, /\[data-turn-key\]:has\(\[data-user-message-bubble="true"\]\) \[role="button"\]\.size-20[\s\S]*?border:\s*none\s*!important/i);
 assert.doesNotMatch(css, /@keyframes|animation(?:-name)?\s*:/i);
 
 assert.match(injectorSource, /loadManagedPresetCss/);

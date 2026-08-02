@@ -1111,6 +1111,90 @@
     }
     syncTacticalRightRailResizer(rail);
 
+    const monitorModule = [...rail.children].find((node) =>
+      node.dataset?.dreamTacticalModule === "monitor");
+    const monitorBody = [...(monitorModule?.children || [])].find((node) =>
+      node.classList?.contains?.("dream-tactical-right-body"));
+    const codeBurnCandidate = window.__CODEX_DREAM_SKIN_CODEBURN__;
+    const codeBurn = Array.isArray(codeBurnCandidate?.activities) &&
+      Array.isArray(codeBurnCandidate?.dailySpend) && codeBurnCandidate?.tokens
+      ? codeBurnCandidate : null;
+    const codeBurnKey = JSON.stringify(codeBurn || null);
+    if (monitorBody && monitorBody.dataset.dreamCodeBurnKey !== codeBurnKey) {
+      monitorBody.dataset.dreamCodeBurnKey = codeBurnKey;
+      monitorBody.replaceChildren();
+      if (!codeBurn) {
+        const empty = document.createElement("div");
+        empty.classList.add("dream-tactical-no-signal");
+        empty.textContent = "CODEBURN OFFLINE";
+        monitorBody.appendChild(empty);
+      } else {
+        const money = (value) => `${codeBurn.currency === "USD" ? "$" : `${codeBurn.currency} `}${value.toFixed(2)}`;
+        const formatTokens = (value) => value >= 1e9 ? `${(value / 1e9).toFixed(1)}B` :
+          value >= 1e6 ? `${(value / 1e6).toFixed(1)}M` : value >= 1e3 ? `${(value / 1e3).toFixed(1)}K` : `${Math.round(value)}`;
+        const monitor = document.createElement("div");
+        const table = document.createElement("div");
+        const tokenStats = document.createElement("div");
+        const spend = document.createElement("div");
+        const spendHeading = document.createElement("div");
+        const bars = document.createElement("div");
+        const axis = document.createElement("div");
+        monitor.classList.add("dream-codeburn-monitor");
+        table.classList.add("dream-codeburn-table");
+        tokenStats.classList.add("dream-codeburn-tokens");
+        spend.classList.add("dream-codeburn-spend");
+        spendHeading.classList.add("dream-codeburn-spend-heading");
+        bars.classList.add("dream-codeburn-bars");
+        axis.classList.add("dream-codeburn-axis");
+        for (const value of ["ACTIVITY", "COST", "TURNS", "1-SHOTS"]) {
+          const cell = document.createElement("span");
+          cell.classList.add("dream-codeburn-header");
+          cell.textContent = value;
+          table.appendChild(cell);
+        }
+        for (const activity of codeBurn.activities) {
+          for (const value of [activity.name, money(activity.cost), `${activity.turns}`, activity.oneShotRate === null ? "—" : `${Math.round(activity.oneShotRate * 100)}%`]) {
+            const cell = document.createElement("span");
+            if (value !== activity.name) cell.classList.add("dream-codeburn-number");
+            cell.textContent = value;
+            table.appendChild(cell);
+          }
+        }
+        for (const [label, value] of [["30 DAYS", formatTokens(codeBurn.tokens.total)], ["AVG/DAY", formatTokens(codeBurn.tokens.average)], ["PEAK", formatTokens(codeBurn.tokens.peak)], ["YESTERDAY", formatTokens(codeBurn.tokens.yesterday)]]) {
+          const stat = document.createElement("div");
+          const heading = document.createElement("span");
+          const content = document.createElement("strong");
+          heading.textContent = label;
+          content.textContent = value;
+          stat.appendChild(heading);
+          stat.appendChild(content);
+          tokenStats.appendChild(stat);
+        }
+        spendHeading.textContent = "DAILY SPEND / 30 DAYS";
+        const maximumSpend = Math.max(0, ...codeBurn.dailySpend.map((day) => day.cost));
+        for (const day of codeBurn.dailySpend) {
+          const bar = document.createElement("span");
+          const height = maximumSpend ? Math.max(day.cost ? 5 : 0, Math.round((day.cost / maximumSpend) * 100)) : 0;
+          bar.style.height = `${height}%`;
+          bar.title = `${day.date}  ${money(day.cost)}`;
+          bars.appendChild(bar);
+        }
+        for (const index of [0, 6, 12, 18, 24, 29]) {
+          const label = document.createElement("span");
+          label.style.gridColumnStart = `${index + 1}`;
+          label.textContent = codeBurn.dailySpend[index]?.date.slice(5).replace("-", "/") || "";
+          axis.appendChild(label);
+        }
+        monitor.appendChild(table);
+        monitor.appendChild(tokenStats);
+        spend.appendChild(spendHeading);
+        spend.appendChild(bars);
+        spend.appendChild(axis);
+        monitor.appendChild(spend);
+        monitorBody.appendChild(monitor);
+      }
+    }
+
     const undecideBody = rail.querySelector?.(
       '.dream-tactical-right-module[data-dream-tactical-module="undecide"] .dream-tactical-right-body',
     );
