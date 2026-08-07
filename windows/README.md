@@ -89,7 +89,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-dream-s
 - `colors`：画布、表面、文字、强调色、成功色、磷光色，以及强/标准/弱线条颜色。其中 `phosphor` 统一控制中央任务区的深绿场与 OpenAI 磷光标记。颜色只接受 `#RGB`、`#RRGGBB`、`#RRGGBBAA` 和受限的 `rgb()`、`hsl()`、`oklch()`、`oklab()`；分号、花括号和 CSS 片段会被拒绝。
 - `strokes`：`subtle`、`default`、`strong`、`focus`，单位为像素，范围 `0–50`。
 - `radii`：`panel`、`control`，单位为像素，范围 `0–16`。
-- `effects`：`scanlineOpacity`、`gridOpacity`、`vignetteOpacity` 和 `brandOpacity`，范围 `0–0.35`；`brandOpacity` 单独控制中央磷光标记的不透明度。
+- `effects`：`scanlineWidth` 控制扫描线粗细（`0.5–12px`），`scanlineDepth` 控制扫描线深度（`0–0.6`），`scanlineSpeed` 控制滚动周期（`0.25–120` 秒，越小越快）；另有 `gridOpacity`、`vignetteOpacity` 和 `brandOpacity`。旧版 `scanlineOpacity` 仍兼容。
 
 字段逐项校验：非法值只回退对应的预设默认值，未知字段会被忽略。`tokens.colors.accent` 优先于兼容旧主题的 `palette.accent`。预设样式集中在 [`assets/presets/preset-codex-tactical-crt.css`](./assets/presets/preset-codex-tactical-crt.css)，所有颜色、线宽、圆角和 CRT 透明度都从令牌读取，因此修改一处即可同步对应层级。
 

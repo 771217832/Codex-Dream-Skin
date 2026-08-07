@@ -44,6 +44,7 @@
       default: "--dream-token-stroke-default",
       strong: "--dream-token-stroke-strong",
       focus: "--dream-token-stroke-focus",
+      projectTree: "--dream-token-stroke-project-tree",
     },
     radii: {
       panel: "--dream-token-radius-panel",
@@ -51,9 +52,15 @@
     },
     effects: {
       scanlineOpacity: "--dream-token-effect-scanline-opacity",
+      scanlineWidth: "--dream-token-effect-scanline-width",
+      scanlineDepth: "--dream-token-effect-scanline-depth",
+      scanlineSpeed: "--dream-token-effect-scanline-speed",
       gridOpacity: "--dream-token-effect-grid-opacity",
       vignetteOpacity: "--dream-token-effect-vignette-opacity",
       brandOpacity: "--dream-token-effect-brand-opacity",
+    },
+    layout: {
+      titleHeight: "--dream-token-layout-title-height",
     },
   };
   const TOKEN_PROPERTIES = Object.values(TOKEN_PROPERTY_MAP)
@@ -92,6 +99,10 @@
     "--dream-token-runtime-sidebar-scrollbar-height",
     "--dream-token-runtime-sidebar-scrollbar-thumb-height",
     "--dream-token-runtime-sidebar-scrollbar-thumb-offset",
+    "--dream-token-runtime-undecide-left",
+    "--dream-token-runtime-undecide-top",
+    "--dream-token-runtime-undecide-width",
+    "--dream-token-runtime-undecide-height",
     ...TOKEN_PROPERTIES,
   ];
   const HOME_UTILITY_CLASS = "dream-home-utility";
@@ -104,6 +115,32 @@
   const TACTICAL_RIGHT_RAIL_ID = "codex-dream-skin-right-rail";
   const TACTICAL_RIGHT_RAIL_RESIZE_CLASS = "dream-tactical-right-resizer";
   const TACTICAL_RIGHT_RAIL_STORAGE_KEY = "codex-dream-skin.tactical-right-rail-width";
+  const TACTICAL_PALETTE_STORAGE_KEY = "codex-dream-skin.tactical-palette";
+  const TACTICAL_PALETTES = {
+    amber: null,
+    cobalt: {
+      canvas: "#020814", surface: "#040d1c", surfaceRaised: "#081a32",
+      textPrimary: "#c2dcff", textSecondary: "#86b6eb", accent: "#4a94ff",
+      phosphor: "#62b7ff", positive: "#60e9ad",
+      lineStrong: "rgb(55 145 255 / 0.94)", lineDefault: "rgb(55 145 255 / 0.78)", lineSubtle: "rgb(55 145 255 / 0.24)",
+    },
+    phosphor: {
+      canvas: "#020601", surface: "#061006", surfaceRaised: "#0d1d0b",
+      textPrimary: "#c2ec9d", textSecondary: "#8cc66f", accent: "#9bd06e",
+      phosphor: "#8bd65d", positive: "#77ff72",
+      lineStrong: "rgb(132 205 79 / 0.94)", lineDefault: "rgb(132 205 79 / 0.78)", lineSubtle: "rgb(132 205 79 / 0.24)",
+    },
+    titanium: {
+      canvas: "#080b0d", surface: "#0d1217", surfaceRaised: "#172027",
+      textPrimary: "#e6eef3", textSecondary: "#b7c7d1", accent: "#d5e1e8",
+      phosphor: "#a5cadd", positive: "#98e0b5",
+      lineStrong: "rgb(207 223 232 / 0.94)", lineDefault: "rgb(207 223 232 / 0.78)", lineSubtle: "rgb(207 223 232 / 0.24)",
+    },
+  };
+  const TACTICAL_PALETTE_OPTIONS = [
+    ["amber", "01 AMBER"], ["cobalt", "02 COBALT"],
+    ["phosphor", "03 PHOSPHOR"], ["titanium", "04 TITANIUM"],
+  ];
   const SIDEBAR_NATIVE_FOOTER_CLASS = "dream-sidebar-native-footer";
   const TACTICAL_TOP_BAR_CLASSES = [
     "dream-tactical-menu-button",
@@ -131,11 +168,13 @@
     "dream-composer-input-line",
     "dream-composer-status-bar",
   ];
+  const CLI_COLLAPSIBLE_CLASS = "dream-cli-collapsible";
   const installToken = {};
   let samplingNativeShell = false;
   let observer = null;
   let layoutObserver = null;
   let layoutObservedAside = null;
+  let layoutObservedProjects = null;
   let sidebarScrollNode = null;
   let sidebarScrollHandler = null;
   let tacticalScrollbarNode = null;
@@ -146,6 +185,7 @@
   let tacticalScrollbarDragState = null;
   let navigationWheelNode = null;
   let navigationWheelHandler = null;
+  const cliCollapsibleBindings = new Map();
   let nativeBrandPath = null;
   let brandLoadPromise = null;
   let brandRetryAfter = 0;
@@ -186,7 +226,6 @@
     for (const [group, maximum, unit] of [
       ["strokes", 50, "px"],
       ["radii", 16, "px"],
-      ["effects", .35, ""],
     ]) {
       const source = rawTokens[group] && typeof rawTokens[group] === "object" ? rawTokens[group] : {};
       for (const [key, property] of Object.entries(TOKEN_PROPERTY_MAP[group])) {
@@ -196,6 +235,27 @@
         }
         tokenProperties[property] = `${candidate}${unit}`;
       }
+    }
+    const effectTokens = rawTokens.effects && typeof rawTokens.effects === "object"
+      ? rawTokens.effects : {};
+    for (const [key, minimum, maximum, unit] of [
+      ["scanlineOpacity", 0, .35, ""],
+      ["scanlineWidth", .5, 12, "px"],
+      ["scanlineDepth", 0, .6, ""],
+      ["scanlineSpeed", .25, 120, "s"],
+      ["gridOpacity", 0, .35, ""],
+      ["vignetteOpacity", 0, .35, ""],
+      ["brandOpacity", 0, .35, ""],
+    ]) {
+      const candidate = effectTokens[key];
+      if (typeof candidate !== "number" || !Number.isFinite(candidate) ||
+          candidate < minimum || candidate > maximum) continue;
+      tokenProperties[TOKEN_PROPERTY_MAP.effects[key]] = `${candidate}${unit}`;
+    }
+    const titleHeight = rawTokens.layout?.titleHeight;
+    if (typeof titleHeight === "number" && Number.isFinite(titleHeight) &&
+        titleHeight >= 24 && titleHeight <= 72) {
+      tokenProperties[TOKEN_PROPERTY_MAP.layout.titleHeight] = `${titleHeight}px`;
     }
     const requestedLegacyAccent = typeof config?.palette?.accent === "string"
       ? config.palette.accent.trim() : "";
@@ -247,6 +307,25 @@
     return URL.createObjectURL(new Blob([bytes], { type: mime }));
   })();
   const config = normalizeConfig(rawConfig);
+  const isTacticalPalette = (value) => typeof value === "string" &&
+    Object.prototype.hasOwnProperty.call(TACTICAL_PALETTES, value);
+  let tacticalPalette = (() => {
+    try {
+      const saved = globalThis.localStorage?.getItem(TACTICAL_PALETTE_STORAGE_KEY);
+      return isTacticalPalette(saved) ? saved : "amber";
+    } catch {
+      return "amber";
+    }
+  })();
+  const applyTacticalPalette = (root) => {
+    const palette = config.themeId === TACTICAL_THEME_ID ? TACTICAL_PALETTES[tacticalPalette] : null;
+    if (!palette) return;
+    for (const [name, value] of Object.entries(palette)) {
+      root.style.setProperty(TOKEN_PROPERTY_MAP.colors[name], value);
+    }
+    root.style.setProperty("--dream-accent", palette.accent);
+    root.style.setProperty("--dream-accent-ink", palette.canvas);
+  };
   let profile = {
     ...defaultProfile,
     aspect: config.initialAspect ?? defaultProfile.aspect,
@@ -425,6 +504,7 @@
 
   const clearSkinDom = () => {
     const root = document.documentElement;
+    clearCliCollapsibleBindings();
     root?.classList.remove(...ROOT_CLASSES);
     root?.removeAttribute?.(THEME_ATTRIBUTE);
     for (const property of ROOT_PROPERTIES) root?.style.removeProperty(property);
@@ -480,6 +560,105 @@
       if (!wanted.has(node)) node.classList.remove(className);
     }
     for (const node of wanted) node.classList.add(className);
+  };
+
+  const restoreAttribute = (node, name, value) => {
+    if (value === null) node.removeAttribute?.(name);
+    else node.setAttribute?.(name, value);
+  };
+
+  const unbindCliCollapsible = (node, binding) => {
+    node.removeEventListener?.("click", binding.onClick);
+    node.removeEventListener?.("keydown", binding.onKeyDown);
+    node.classList?.remove(CLI_COLLAPSIBLE_CLASS);
+    for (const name of ["data-dream-cli-kind", "data-dream-cli-summary", "data-dream-cli-expanded"]) {
+      node.removeAttribute?.(name);
+    }
+    restoreAttribute(node, "role", binding.role);
+    restoreAttribute(node, "tabindex", binding.tabIndex);
+    restoreAttribute(node, "aria-expanded", binding.ariaExpanded);
+    restoreAttribute(node, "title", binding.title);
+    cliCollapsibleBindings.delete(node);
+  };
+
+  const clearCliCollapsibleBindings = () => {
+    for (const [node, binding] of [...cliCollapsibleBindings]) {
+      unbindCliCollapsible(node, binding);
+    }
+  };
+
+  const bindCliCollapsible = (node, kind, summary) => {
+    let binding = cliCollapsibleBindings.get(node);
+    if (!binding) {
+      const interactive = node.tagName === "BUTTON" || node.tagName === "A" ||
+        node.getAttribute?.("role") === "button";
+      const toggle = () => {
+        const expanded = node.getAttribute?.("data-dream-cli-expanded") === "true";
+        node.setAttribute?.("data-dream-cli-expanded", expanded ? "false" : "true");
+        if (!interactive) node.setAttribute?.("aria-expanded", expanded ? "false" : "true");
+      };
+      const onClick = (event) => {
+        const nestedControl = event.target?.closest?.("button, a, [role=\"button\"]");
+        if (nestedControl && nestedControl !== node) return;
+        toggle();
+      };
+      const onKeyDown = (event) => {
+        if (interactive || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault?.();
+        toggle();
+      };
+      binding = {
+        interactive,
+        onClick,
+        onKeyDown,
+        role: node.getAttribute?.("role"),
+        tabIndex: node.getAttribute?.("tabindex"),
+        ariaExpanded: node.getAttribute?.("aria-expanded"),
+        title: node.getAttribute?.("title"),
+      };
+      cliCollapsibleBindings.set(node, binding);
+      node.addEventListener?.("click", onClick);
+      node.addEventListener?.("keydown", onKeyDown);
+      node.setAttribute?.("data-dream-cli-expanded", "false");
+      if (!interactive) {
+        node.setAttribute?.("role", "button");
+        node.setAttribute?.("tabindex", "0");
+        node.setAttribute?.("aria-expanded", "false");
+      }
+    }
+    node.classList?.add(CLI_COLLAPSIBLE_CLASS);
+    node.setAttribute?.("data-dream-cli-kind", kind);
+    node.setAttribute?.("data-dream-cli-summary", summary);
+    node.setAttribute?.("title", "Click to expand or collapse");
+  };
+
+  const syncCliTranscript = (threadScroll, tactical) => {
+    const wanted = new Set();
+    if (tactical && threadScroll) {
+      for (const turn of threadScroll.querySelectorAll?.("[data-turn-key]") || []) {
+        for (const block of turn.querySelectorAll?.("pre") || []) {
+          const text = `${block.textContent || ""}`.trim();
+          if (text.length < 180 && text.split(/\r?\n/).length < 4) continue;
+          wanted.add(block);
+          bindCliCollapsible(block, "CODE", text.replace(/\s+/g, " ").slice(0, 72) || "code block");
+        }
+        for (const image of turn.querySelectorAll?.("img") || []) {
+          if (image.closest?.("[data-local-conversation-item-target-ids], button, a, [role=\"button\"]")) {
+            continue;
+          }
+          const container = image.parentElement || image;
+          wanted.add(container);
+          bindCliCollapsible(
+            container,
+            "IMAGE",
+            `${image.getAttribute?.("alt") || "image attachment"}`.trim().slice(0, 72),
+          );
+        }
+      }
+    }
+    for (const [node, binding] of [...cliCollapsibleBindings]) {
+      if (!wanted.has(node)) unbindCliCollapsible(node, binding);
+    }
   };
 
   const measuredHeight = (node) => {
@@ -574,8 +753,10 @@
       const thumb = document.createElement("div");
       thumb.classList.add("dream-project-scrollbar-thumb");
       scrollbar.appendChild(thumb);
-      document.body.appendChild(scrollbar);
     }
+    // Anchor the rail to the resizable sidebar so native drag-resizing moves
+    // it immediately, without waiting for a viewport-coordinate recalculation.
+    if (scrollbar.parentElement !== aside) aside.appendChild(scrollbar);
     scrollbar.removeAttribute?.("aria-hidden");
     scrollbar.setAttribute("role", "scrollbar");
     scrollbar.setAttribute("aria-label", "02.PROJECTS");
@@ -592,19 +773,18 @@
       const projectPanel = aside.querySelector?.(".dream-sidebar-projects");
       const projectRect = projectPanel?.getBoundingClientRect?.() || asideRect;
       const titleHeight = tokenNumber("--dream-token-layout-project-title-height", 42);
-      const scrollbarWidth = tokenNumber("--dream-token-layout-scrollbar", 8);
       const scrollbarInset = tokenNumber("--dream-token-layout-scrollbar-inset", 4);
       const frameStroke = tokenNumber("--dream-token-stroke-strong", 2);
       // Measure the actual Project module rather than reconstructing its position
       // from sibling heights. Codex virtualizes project rows, so reconstructed
       // coordinates drift while rows mount or unmount during a scroll.
       const trackTop = Math.max(
-        asideRect.top + frameStroke + scrollbarInset,
-        projectRect.top + titleHeight + scrollbarInset,
+        frameStroke + scrollbarInset,
+        projectRect.top - asideRect.top + titleHeight + scrollbarInset,
       );
       const trackBottom = Math.min(
-        asideRect.bottom - frameStroke - scrollbarInset,
-        projectRect.bottom - frameStroke - scrollbarInset,
+        asideRect.height - frameStroke - scrollbarInset,
+        projectRect.bottom - asideRect.top - frameStroke - scrollbarInset,
       );
       const trackHeight = Math.max(0, trackBottom - trackTop);
       const maximumScroll = Math.max(0,
@@ -617,10 +797,6 @@
       const thumbOffset = maximumScroll > 0
         ? thumbTravel * (Number(projectScroll.scrollTop) / maximumScroll)
         : 0;
-      root.style.setProperty(
-        "--dream-token-runtime-sidebar-scrollbar-left",
-        `${asideRect.right - frameStroke - scrollbarInset - scrollbarWidth}px`,
-      );
       root.style.setProperty(
         "--dream-token-runtime-sidebar-scrollbar-top",
         `${trackTop}px`,
@@ -724,6 +900,7 @@
       return;
     }
     const rect = projects.getBoundingClientRect?.();
+    const mainRect = document.querySelector("main.main-surface")?.getBoundingClientRect?.();
     const borderWidth = Number.parseFloat(getComputedStyle(projects).borderBottomWidth) || 2;
     if (!rect || rect.width <= 0 || rect.height <= 0) {
       frame?.remove();
@@ -735,18 +912,52 @@
       frame.setAttribute("aria-hidden", "true");
       document.body.appendChild(frame);
     }
+    const bottom = Number.isFinite(mainRect?.bottom) ? mainRect.bottom : rect.bottom;
+    const extensionTop = Math.min(bottom - borderWidth, rect.bottom - borderWidth);
     frame.style.left = `${Math.round(rect.left)}px`;
-    frame.style.top = `${Math.round(rect.bottom - borderWidth)}px`;
+    frame.style.top = `${Math.round(extensionTop)}px`;
     frame.style.width = `${Math.round(rect.width)}px`;
-    frame.style.height = `${Math.ceil(borderWidth)}px`;
+    frame.style.height = `${Math.max(Math.ceil(borderWidth), Math.ceil(bottom - extensionTop))}px`;
+  };
+
+  const syncTacticalPaletteControls = (control) => {
+    for (const button of control?.querySelectorAll?.(".dream-footer-theme-button") || []) {
+      const selected = button.getAttribute("data-dream-tactical-palette") === tacticalPalette;
+      button.setAttribute("aria-pressed", `${selected}`);
+      button.textContent = selected ? `[${button.getAttribute("data-dream-tactical-palette-label")}]` :
+        button.getAttribute("data-dream-tactical-palette-label");
+    }
+  };
+
+  const createTacticalPaletteControl = () => {
+    const control = document.createElement("div");
+    const label = document.createElement("span");
+    control.classList.add("dream-footer-center", "dream-footer-theme");
+    label.classList.add("dream-footer-theme-label");
+    label.textContent = "THEME //";
+    control.appendChild(label);
+    for (const [name, text] of TACTICAL_PALETTE_OPTIONS) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.classList.add("dream-footer-theme-button");
+      button.setAttribute("data-dream-tactical-palette", name);
+      button.setAttribute("data-dream-tactical-palette-label", text);
+      button.setAttribute("aria-label", `Switch to ${text} theme`);
+      button.addEventListener("click", () => {
+        tacticalPalette = name;
+        try { globalThis.localStorage?.setItem(TACTICAL_PALETTE_STORAGE_KEY, name); } catch {}
+        ensure();
+      });
+      control.appendChild(button);
+    }
+    syncTacticalPaletteControls(control);
+    return control;
   };
 
   const syncTacticalFooter = (aside, nav, navigationHead, navigationBody, projects) => {
     const root = document.documentElement;
     const tactical = config.themeId === TACTICAL_THEME_ID;
     root.classList.toggle("dream-sidebar-collapsed", tactical && !aside);
-    syncTacticalProjectBottomFrame(tactical ? projects : null);
-
     const nativeFooter = nav?.parentElement
       ? [...nav.parentElement.children].find((node) =>
         node !== nav && node.querySelector?.("button img")) || null
@@ -766,7 +977,6 @@
     if (!footer) {
       footer = document.createElement("div");
       footer.id = TACTICAL_FOOTER_ID;
-      footer.setAttribute("aria-hidden", "true");
       const collapsedAvatar = document.createElement("img");
       collapsedAvatar.classList.add("dream-footer-collapsed-avatar");
       collapsedAvatar.alt = "";
@@ -775,18 +985,24 @@
       const online = document.createElement("span");
       online.classList.add("dream-footer-online");
       online.textContent = "● ONLINE";
-      const center = document.createElement("span");
-      center.classList.add("dream-footer-center");
-      center.textContent = "****************************************";
       const clock = document.createElement("span");
       clock.classList.add("dream-footer-clock");
       footer.appendChild(collapsedAvatar);
       footer.appendChild(username);
       footer.appendChild(online);
-      footer.appendChild(center);
       footer.appendChild(clock);
       document.body.appendChild(footer);
     }
+    footer.removeAttribute?.("aria-hidden");
+    footer.setAttribute("role", "group");
+    footer.setAttribute("aria-label", "Tactical status and theme selection");
+    let themeControl = footer.querySelector?.(".dream-footer-theme");
+    if (!themeControl) {
+      footer.querySelector?.(".dream-footer-center")?.remove?.();
+      themeControl = createTacticalPaletteControl();
+      footer.appendChild(themeControl);
+    }
+    syncTacticalPaletteControls(themeControl);
 
     const avatar = nativeFooter?.querySelector?.("button img");
     const profileButton = nativeFooterButtons.find((button) => button.querySelector?.("img")) || null;
@@ -846,6 +1062,7 @@
     // it at its origin and bind scrolling exclusively to the Project module.
     if (tactical && nativeScroll && nativeScroll.scrollTop !== 0) nativeScroll.scrollTop = 0;
     syncTacticalScrollbar(aside, projects, navigationBody);
+    syncTacticalProjectBottomFrame(tactical ? projects : null);
   };
 
   const syncTacticalNavigationItems = (navigationBody, navigationHead) => {
@@ -950,32 +1167,34 @@
     syncOwnedClass("dream-main-composer-section", tactical ? [composerSection] : []);
     syncOwnedClass("dream-composer-input-line", tactical ? [inputLine] : []);
     syncOwnedClass("dream-composer-status-bar", tactical ? [statusBar] : []);
+    syncCliTranscript(threadScroll, tactical);
   };
 
-  const nativeTacticalDetailPanel = () => [...document.querySelectorAll("aside")].reverse().find((node) => {
-    const rect = node?.getBoundingClientRect?.();
-    return node.id !== TACTICAL_RIGHT_RAIL_ID &&
-      !node.closest?.(".dream-tactical-right-body") &&
-      !node.classList?.contains?.("dream-tactical-detail-mirror") &&
-      (node.classList?.contains?.("dream-tactical-native-detail-source") ||
-        Boolean(rect && rect.width > 0 && rect.height > 0)) &&
-      Boolean(node.querySelector?.('[role="tabpanel"]'));
-  }) || null;
+  const nativeTacticalDetailPanel = () => document.querySelector?.(
+    'aside[data-app-shell-focus-area="right-panel"]',
+  ) || null;
 
-  const tacticalDetailData = (panel) => {
-    const compact = (value, limit = 6000) => `${value || ""}`
-      .replace(/\s+$/g, "").replace(/^\s+/g, "").slice(0, limit);
-    const title = compact(panel.querySelector?.('[role="tab"][aria-selected="true"]')?.innerText || "DETAIL", 160);
-    const path = [...panel.querySelectorAll?.('nav[aria-label="File path"] li span') || []]
-      .map((node) => compact(node.textContent, 160)).filter(Boolean).join(" / ");
-    const codeHost = panel.querySelector?.("diffs-container");
-    const shadowLines = [...codeHost?.shadowRoot?.querySelectorAll?.("[data-line]") || []]
-      .map((node) => compact(node.innerText || node.textContent, 2400)).filter(Boolean);
-    const code = compact(shadowLines.length ? shadowLines.join("\n") :
-      [...panel.querySelectorAll?.("diffs-container, .view-line, .cm-line, pre, code") || []]
-        .map((node) => compact(node.innerText || node.textContent, 2400)).find(Boolean));
-    const image = panel.querySelector?.("img:not([class*='icon']), canvas");
-    return { title, path, code, image: Boolean(image) };
+  const syncTacticalNativeDetailPosition = (panel, target) => {
+    const root = document.documentElement;
+    const host = panel?.parentElement;
+    const targetRect = target?.getBoundingClientRect?.();
+    const hostRect = host?.getBoundingClientRect?.();
+    const properties = [
+      "--dream-token-runtime-undecide-left",
+      "--dream-token-runtime-undecide-top",
+      "--dream-token-runtime-undecide-width",
+      "--dream-token-runtime-undecide-height",
+    ];
+    if (!hostRect || !targetRect || targetRect.width <= 0 || targetRect.height <= 0) {
+      properties.forEach((property) => root.style.removeProperty(property));
+      return false;
+    }
+    const pixel = (value) => `${Math.round(value * 100) / 100}px`;
+    root.style.setProperty(properties[0], pixel(targetRect.left - hostRect.left));
+    root.style.setProperty(properties[1], pixel(targetRect.top - hostRect.top));
+    root.style.setProperty(properties[2], pixel(targetRect.width));
+    root.style.setProperty(properties[3], pixel(targetRect.height));
+    return true;
   };
 
   const syncTacticalRightRailResizer = (rail) => {
@@ -994,6 +1213,7 @@
         root.style.setProperty("--dream-token-runtime-right-rail-width", `${width}px`);
         resizer.setAttribute("aria-valuenow", `${width}`);
         try { localStorage.setItem(TACTICAL_RIGHT_RAIL_STORAGE_KEY, `${width}`); } catch {}
+        scheduleEnsure();
       };
       resizer.addEventListener("pointerdown", (event) => {
         event.preventDefault?.();
@@ -1094,12 +1314,15 @@
       rail = document.createElement("aside");
       rail.id = TACTICAL_RIGHT_RAIL_ID;
       rail.setAttribute("aria-hidden", "true");
-      for (const label of ["UNDECIDE", "MONITOR"]) {
+      for (const { key, label } of [
+        { key: "undecide", label: "DETAIL" },
+        { key: "monitor", label: "MONITOR" },
+      ]) {
         const module = document.createElement("section");
         const title = document.createElement("div");
         const body = document.createElement("div");
         module.classList.add("dream-tactical-right-module");
-        module.dataset.dreamTacticalModule = label.toLowerCase();
+        module.dataset.dreamTacticalModule = key;
         title.classList.add("dream-tactical-right-title");
         body.classList.add("dream-tactical-right-body");
         title.textContent = label;
@@ -1108,6 +1331,14 @@
         rail.appendChild(module);
       }
       shellMain.appendChild(rail);
+    }
+    for (const { key, label } of [
+      { key: "undecide", label: "DETAIL" },
+      { key: "monitor", label: "MONITOR" },
+    ]) {
+      const module = [...rail.children].find((node) => node.dataset?.dreamTacticalModule === key);
+      const title = module?.children?.[0];
+      if (title) title.textContent = label;
     }
     syncTacticalRightRailResizer(rail);
 
@@ -1139,6 +1370,7 @@
         const spendHeading = document.createElement("div");
         const bars = document.createElement("div");
         const axis = document.createElement("div");
+        const scale = document.createElement("div");
         monitor.classList.add("dream-codeburn-monitor");
         table.classList.add("dream-codeburn-table");
         tokenStats.classList.add("dream-codeburn-tokens");
@@ -1146,6 +1378,7 @@
         spendHeading.classList.add("dream-codeburn-spend-heading");
         bars.classList.add("dream-codeburn-bars");
         axis.classList.add("dream-codeburn-axis");
+        scale.classList.add("dream-codeburn-scale");
         for (const value of ["ACTIVITY", "COST", "TURNS", "1-SHOTS"]) {
           const cell = document.createElement("span");
           cell.classList.add("dream-codeburn-header");
@@ -1174,7 +1407,9 @@
         const maximumSpend = Math.max(0, ...codeBurn.dailySpend.map((day) => day.cost));
         for (const day of codeBurn.dailySpend) {
           const bar = document.createElement("span");
-          const height = maximumSpend ? Math.max(day.cost ? 5 : 0, Math.round((day.cost / maximumSpend) * 100)) : 0;
+          const height = maximumSpend
+            ? Math.max(day.cost ? 2 : 0, Math.round((day.cost / maximumSpend) * 100))
+            : 0;
           bar.style.height = `${height}%`;
           bar.title = `${day.date}  ${money(day.cost)}`;
           bars.appendChild(bar);
@@ -1185,11 +1420,17 @@
           label.textContent = codeBurn.dailySpend[index]?.date.slice(5).replace("-", "/") || "";
           axis.appendChild(label);
         }
+        for (const value of [maximumSpend, maximumSpend / 2, 0]) {
+          const label = document.createElement("span");
+          label.textContent = money(value);
+          scale.appendChild(label);
+        }
         monitor.appendChild(table);
         monitor.appendChild(tokenStats);
         spend.appendChild(spendHeading);
         spend.appendChild(bars);
         spend.appendChild(axis);
+        spend.appendChild(scale);
         monitor.appendChild(spend);
         monitorBody.appendChild(monitor);
       }
@@ -1207,26 +1448,10 @@
       if (!nativePanel.classList.contains("dream-tactical-native-detail-source")) {
         nativePanel.classList.add("dream-tactical-native-detail-source");
       }
-      const nativeDetail = tacticalDetailData(nativePanel);
-      const key = `native:${nativePanel.innerHTML}\n${nativeDetail.code}`;
-      if (undecideBody.dataset.dreamTacticalDetailKey !== key) {
-        const mirror = nativePanel.cloneNode(true);
-        const transcript = document.createElement("div");
-        mirror.classList.remove("dream-tactical-native-detail-source");
-        mirror.classList.add("dream-tactical-detail-mirror");
-        mirror.setAttribute("aria-hidden", "true");
-        mirror.querySelectorAll?.("[id]").forEach((node) => node.removeAttribute("id"));
-        transcript.classList.add("dream-tactical-detail-transcript");
-        transcript.textContent = `FILE  ${nativeDetail.title || "DETAIL"}${nativeDetail.path ? `\nPATH  ${nativeDetail.path}` : ""}`;
-        undecideBody.dataset.dreamTacticalDetailKey = key;
-        if (nativeDetail.code && !nativeDetail.image) {
-          const code = document.createElement("pre");
-          code.classList.add("dream-tactical-detail-code");
-          code.textContent = nativeDetail.code;
-          undecideBody.replaceChildren(transcript, code);
-        } else {
-          undecideBody.replaceChildren(transcript, mirror);
-        }
+      if (syncTacticalNativeDetailPosition(nativePanel, undecideBody) &&
+          undecideBody.dataset.dreamTacticalDetailKey !== "native-live") {
+        undecideBody.dataset.dreamTacticalDetailKey = "native-live";
+        undecideBody.replaceChildren();
       }
       return;
     }
@@ -1241,13 +1466,10 @@
         empty.textContent = "NO SIGNAL";
         undecideBody.appendChild(empty);
       } else {
-        const heading = document.createElement("div");
         const content = document.createElement("pre");
-        heading.classList.add("dream-tactical-detail-heading");
         content.classList.add("dream-tactical-detail-content");
-        heading.textContent = detail.title;
         content.textContent = detail.value;
-        undecideBody.append(heading, content);
+        undecideBody.appendChild(content);
       }
     }
   };
@@ -1352,6 +1574,7 @@
     }
     root.style.setProperty("--dream-accent", accent);
     root.style.setProperty("--dream-accent-ink", accentInk);
+    applyTacticalPalette(root);
     root.style.setProperty("--dream-image-luma", profile.luma.toFixed(3));
   };
 
@@ -1410,11 +1633,15 @@
     const tacticalAside = config.themeId === TACTICAL_THEME_ID
       ? document.querySelector("aside.app-shell-left-panel")
       : null;
-    if (typeof ResizeObserver === "function" && tacticalAside !== layoutObservedAside) {
+    const tacticalProjects = tacticalAside?.querySelector?.(".dream-sidebar-projects") || null;
+    if (typeof ResizeObserver === "function" &&
+      (tacticalAside !== layoutObservedAside || tacticalProjects !== layoutObservedProjects)) {
       layoutObserver?.disconnect?.();
       layoutObserver = tacticalAside ? new ResizeObserver(() => scheduleEnsure()) : null;
       layoutObserver?.observe?.(tacticalAside);
+      layoutObserver?.observe?.(tacticalProjects);
       layoutObservedAside = tacticalAside;
+      layoutObservedProjects = tacticalProjects;
     }
 
     let chrome = document.getElementById(CHROME_ID);
@@ -1437,6 +1664,7 @@
     layoutObserver?.disconnect?.();
     layoutObserver = null;
     layoutObservedAside = null;
+    layoutObservedProjects = null;
     clearTacticalScrollbarBindings();
     if (state?.timer) clearInterval(state.timer);
     if (state?.scheduler?.timeout) clearTimeout(state.scheduler.timeout);

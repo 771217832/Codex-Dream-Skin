@@ -25,14 +25,20 @@
   --dream-token-stroke-default: 1px;
   --dream-token-stroke-strong: 2px;
   --dream-token-stroke-focus: 2px;
+  --dream-token-stroke-project-tree: 2px;
   --dream-token-radius-panel: 0px;
   --dream-token-radius-control: 0px;
   --dream-token-radius-avatar: 50%;
 
-  --dream-token-effect-scanline-opacity: 0.16;
+  /* CRT scanline controls: width (px), depth (0-0.6), speed (seconds/cycle). */
+  --dream-token-effect-scanline-opacity: 0.26;
+  --dream-token-effect-scanline-width: 2px;
+  --dream-token-effect-scanline-depth: var(--dream-token-effect-scanline-opacity);
+  --dream-token-effect-scanline-speed: 1.8s;
   --dream-token-effect-grid-opacity: 0.08;
   --dream-token-effect-vignette-opacity: 0.28;
   --dream-token-effect-brand-opacity: 0.13;
+  --dream-token-effect-bloom-opacity: 0.36;
   --dream-token-effect-visible-opacity: 1;
   --dream-token-effect-hidden-opacity: 0;
 
@@ -46,7 +52,7 @@
   --dream-token-layout-shell-gap-compact: 4px;
   --dream-token-layout-active-shell-gap: var(--dream-token-layout-shell-gap);
   --dream-token-layout-title-height: 38px;
-  --dream-token-layout-project-title-height: 38px;
+  --dream-token-layout-project-title-height: var(--dream-token-layout-title-height);
   --dream-token-layout-app-bar-height: 72px;
   --dream-token-layout-footer-height: 48px;
   --dream-token-layout-header-control-height: 62px;
@@ -60,6 +66,10 @@
   --dream-token-layout-scrollbar-inset: 4px;
   --dream-token-layout-composer-min-height: 150px;
   --dream-token-layout-conversation-min-height: 220px;
+  --dream-token-layout-cli-prompt-column: 76px;
+  --dream-token-layout-cli-entry-gap: 6px;
+  --dream-token-layout-cli-font-size: 14px;
+  --dream-token-layout-cli-line-height: 1.42;
   --dream-token-layout-brand-size: min(38vw, 430px);
   --dream-token-layout-brand-top: 72px;
   --dream-token-layout-brand-bottom: 190px;
@@ -75,7 +85,6 @@
   --dream-token-color-screen-grid: color-mix(in srgb, var(--dream-token-color-line-strong) 15%, var(--dream-token-color-transparent));
   --dream-token-color-main-field: var(--dream-token-color-canvas);
   --dream-token-color-main-grid: color-mix(in srgb, var(--dream-token-color-phosphor) 8%, var(--dream-token-color-transparent));
-  --dream-token-color-main-glow: var(--dream-token-color-transparent);
   --dream-token-color-vignette: color-mix(in srgb, var(--dream-token-color-canvas) calc(var(--dream-token-effect-vignette-opacity) * 100%), var(--dream-token-color-transparent));
   --dream-token-color-scroll-track: color-mix(in srgb, var(--dream-token-color-canvas) 92%, var(--dream-token-color-surface));
 
@@ -95,7 +104,13 @@
     repeating-linear-gradient(to bottom, color-mix(in srgb, var(--dream-token-color-accent-hot) 22%, var(--dream-token-color-transparent)) 0, var(--dream-token-color-transparent) var(--dream-token-stroke-subtle), color-mix(in srgb, var(--dream-token-color-ink) 16%, var(--dream-token-color-transparent)) var(--dream-token-stroke-default), var(--dream-token-color-transparent) calc(var(--dream-token-stroke-default) * 2)),
     linear-gradient(90deg, var(--dream-token-color-accent-hot), var(--dream-token-color-accent), color-mix(in srgb, var(--dream-token-color-accent) 78%, var(--dream-token-color-ink)));
   --dream-token-background-scanlines:
-    repeating-linear-gradient(to bottom, var(--dream-token-color-transparent) 0, var(--dream-token-color-transparent) 3px, var(--dream-token-color-ink) 4px, var(--dream-token-color-ink) 5px);
+    repeating-linear-gradient(
+      to bottom,
+      var(--dream-token-color-transparent) 0,
+      var(--dream-token-color-transparent) calc(var(--dream-token-effect-scanline-width) * 2),
+      var(--dream-token-color-ink) calc(var(--dream-token-effect-scanline-width) * 2),
+      var(--dream-token-color-ink) calc(var(--dream-token-effect-scanline-width) * 3)
+    );
   --dream-token-background-screen-grid:
     repeating-linear-gradient(to right, var(--dream-token-color-transparent) 0, var(--dream-token-color-transparent) calc(var(--dream-token-layout-screen-grid) - var(--dream-token-stroke-subtle)), var(--dream-token-color-screen-grid) var(--dream-token-layout-screen-grid)),
     repeating-linear-gradient(to bottom, var(--dream-token-color-transparent) 0, var(--dream-token-color-transparent) calc(var(--dream-token-layout-screen-grid) - var(--dream-token-stroke-subtle)), var(--dream-token-color-screen-grid) var(--dream-token-layout-screen-grid));
@@ -104,14 +119,14 @@
   --dream-token-shadow-panel: inset 0 0 26px color-mix(in srgb, var(--dream-token-color-canvas) 76%, var(--dream-token-color-transparent));
   --dream-token-shadow-panel-raised: inset 0 0 18px color-mix(in srgb, var(--dream-token-color-canvas) 62%, var(--dream-token-color-transparent));
   --dream-token-shadow-brand: drop-shadow(0 0 18px color-mix(in srgb, var(--dream-token-color-phosphor) 48%, var(--dream-token-color-transparent)));
-  --dream-token-shadow-text: 0 0 5px color-mix(in srgb, var(--dream-token-color-accent) 30%, var(--dream-token-color-transparent));
+  --dream-token-shadow-text: 0 0 7px color-mix(in srgb, var(--dream-token-color-accent) 42%, var(--dream-token-color-transparent));
   --dream-token-shadow-none: none;
 
   --dream-token-label-app: "CODEX_TACTICAL";
   --dream-token-label-navigation: "NAVIGATION";
   --dream-token-label-projects: "PROJECT";
   --dream-token-label-main: "MAINTASK";
-  --dream-token-label-undecide: "UNDECIDE";
+  --dream-token-label-undecide: "DETAIL";
   --dream-token-label-monitor: "MONITOR";
   --dream-token-label-composer: "TASK_COMPOSER";
   --dream-token-module-icon-navigation: url("../icons/gps-line.svg");
@@ -211,12 +226,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin:
-    var(--dream-token-layout-header-inset)
-    var(--dream-token-layout-header-inset)
-    var(--dream-token-layout-header-inset)
-    var(--dream-token-layout-panel-gap);
-  padding: 3px 18px;
+  margin: var(--dream-token-layout-header-inset);
+  padding: 3px;
   color: var(--dream-token-color-ink) !important;
   background:
     linear-gradient(var(--dream-token-color-accent), var(--dream-token-color-accent)) content-box,
@@ -407,7 +418,20 @@
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel > [class~="max-w-full"] {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 1 1 auto !important;
   overflow: visible !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel > [class~="max-w-full"] > div,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel nav {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel nav,
@@ -485,9 +509,11 @@
   content: "";
   position: absolute;
   z-index: 4;
-  inset: 5px auto auto 12px;
-  width: 28px;
-  height: 28px;
+  top: 50%;
+  left: 12px;
+  width: min(28px, calc(var(--dream-token-layout-title-height) - 8px));
+  height: min(28px, calc(var(--dream-token-layout-title-height) - 8px));
+  transform: translateY(-50%);
   background-color: var(--dream-token-color-ink);
   -webkit-mask: var(--dream-token-module-icon-navigation, none) center / contain no-repeat;
   mask: var(--dream-token-module-icon-navigation, none) center / contain no-repeat;
@@ -560,9 +586,11 @@
   content: "";
   position: absolute;
   z-index: 2;
-  inset: 5px auto auto 10px;
-  width: 26px;
-  height: 26px;
+  top: 50%;
+  left: 10px;
+  width: min(26px, calc(var(--dream-token-layout-project-title-height) - 8px));
+  height: min(26px, calc(var(--dream-token-layout-project-title-height) - 8px));
+  transform: translateY(-50%);
   background-color: var(--dream-token-color-ink);
   -webkit-mask: var(--dream-token-module-icon-project, none) center / contain no-repeat;
   mask: var(--dream-token-module-icon-project, none) center / contain no-repeat;
@@ -722,6 +750,40 @@
   text-shadow: var(--dream-token-shadow-text);
 }
 
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme {
+  gap: 18px;
+  pointer-events: auto;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-label {
+  color: var(--dream-token-color-text-secondary);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button {
+  appearance: none;
+  padding: 2px 5px;
+  color: var(--dream-token-color-text-secondary);
+  background: var(--dream-token-color-transparent);
+  border: var(--dream-token-stroke-default) solid var(--dream-token-color-transparent);
+  border-radius: var(--dream-token-radius-control);
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button[aria-pressed="true"] {
+  color: var(--dream-token-color-accent);
+  border-color: var(--dream-token-color-accent);
+  text-shadow: var(--dream-token-shadow-text);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button:hover,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button:focus-visible {
+  color: var(--dream-token-color-text-primary);
+  border-color: var(--dream-token-color-accent-hot);
+  outline: none;
+}
+
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-clock {
   right: 18px;
   color: var(--dream-token-color-accent);
@@ -738,9 +800,10 @@
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] #codex-dream-skin-project-scrollbar {
   display: none !important;
   box-sizing: border-box;
-  position: fixed;
+  position: absolute;
   z-index: 3;
-  left: var(--dream-token-runtime-sidebar-scrollbar-left, 360px);
+  right: calc(var(--dream-token-stroke-strong) + var(--dream-token-layout-scrollbar-inset));
+  left: auto;
   top: var(--dream-token-runtime-sidebar-scrollbar-top, 448px);
   width: var(--dream-token-layout-scrollbar);
   height: var(--dream-token-runtime-sidebar-scrollbar-height, 240px);
@@ -892,9 +955,11 @@
   content: "";
   position: absolute;
   z-index: 3;
-  inset: 5px auto auto 12px;
-  width: 28px;
-  height: 28px;
+  top: 50%;
+  left: 12px;
+  width: min(28px, calc(var(--dream-token-layout-title-height) - 8px));
+  height: min(28px, calc(var(--dream-token-layout-title-height) - 8px));
+  transform: translateY(-50%);
   background-color: var(--dream-token-color-ink);
   -webkit-mask: var(--dream-token-module-icon-main, none) center / contain no-repeat;
   mask: var(--dream-token-module-icon-main, none) center / contain no-repeat;
@@ -1213,9 +1278,11 @@
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-right-title::after {
   content: "";
   position: absolute;
-  inset: 5px auto auto 12px;
-  width: 26px;
-  height: 26px;
+  top: 50%;
+  left: 12px;
+  width: min(26px, calc(var(--dream-token-layout-title-height) - 8px));
+  height: min(26px, calc(var(--dream-token-layout-title-height) - 8px));
+  transform: translateY(-50%);
   background-color: var(--dream-token-color-ink);
   pointer-events: none;
 }
@@ -1255,7 +1322,7 @@
   display: grid;
   gap: 10px;
   height: 100%;
-  grid-template-rows: auto auto minmax(96px, 1fr);
+  grid-template-rows: auto auto minmax(190px, 1fr);
   font-family: var(--dream-token-font-chrome);
 }
 
@@ -1334,13 +1401,21 @@
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-spend {
   display: grid;
   min-height: 0;
+  grid-template-columns: 34px minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
   border: var(--dream-token-stroke-default) solid var(--dream-token-color-line-strong);
+  background-image:
+    linear-gradient(to right, var(--dream-token-color-line-subtle) var(--dream-token-stroke-subtle), var(--dream-token-color-transparent) var(--dream-token-stroke-subtle)),
+    linear-gradient(to bottom, var(--dream-token-color-line-subtle) var(--dream-token-stroke-subtle), var(--dream-token-color-transparent) var(--dream-token-stroke-subtle));
+  background-size: 10px 10px;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-spend-heading {
+  grid-column: 1 / -1;
+  width: max-content;
   padding: 6px 7px;
+  justify-self: start;
   color: var(--dream-token-color-ink);
   background: var(--dream-token-color-accent);
   font: 700 11px/1 var(--dream-token-font-chrome);
@@ -1348,37 +1423,73 @@
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-bars {
   display: grid;
+  box-sizing: border-box;
+  grid-column: 2;
+  grid-row: 2;
   grid-template-columns: repeat(30, minmax(0, 1fr));
   align-items: end;
-  gap: 2px;
+  gap: var(--dream-token-stroke-subtle);
   min-height: 0;
-  padding: 8px 6px 6px;
-  background-image: linear-gradient(var(--dream-token-color-line-subtle) var(--dream-token-stroke-subtle), var(--dream-token-color-transparent) var(--dream-token-stroke-subtle));
-  background-size: 100% 25%;
+  padding: 4px 6px 4px 0;
+  background: none;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-bars span {
   display: block;
-  min-height: var(--dream-token-stroke-default);
-  background: var(--dream-token-color-text-secondary);
-}
-
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-bars span:last-child {
-  background: var(--dream-token-color-accent);
+  min-height: 0;
+  background: repeating-linear-gradient(to bottom, var(--dream-token-color-accent) 0 var(--dream-token-stroke-subtle), var(--dream-token-color-transparent) var(--dream-token-stroke-subtle) 4px);
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-axis {
   display: grid;
+  grid-column: 2;
+  grid-row: 3;
   grid-template-columns: repeat(30, minmax(0, 1fr));
-  min-height: 16px;
-  padding: 2px 6px 4px;
+  min-height: 0;
+  padding: 2px 6px 4px 0;
   color: var(--dream-token-color-text-secondary);
   font: 9px/1 var(--dream-token-font-chrome);
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-axis span {
   width: max-content;
-  transform: translateX(-1px);
+  justify-self: center;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-axis span:first-child {
+  justify-self: start;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-axis span:last-child {
+  justify-self: end;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-scale {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  min-height: 0;
+  padding: 4px 3px 4px 6px;
+  color: var(--dream-token-color-text-secondary);
+  font: 9px/1 var(--dream-token-font-chrome);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-scale span {
+  width: max-content;
+  justify-self: end;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-scale span:first-child {
+  align-self: start;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-scale span:nth-child(2) {
+  align-self: center;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-scale span:last-child {
+  align-self: end;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-heading {
@@ -1434,29 +1545,47 @@
   word-break: break-word;
 }
 
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-native-detail-source {
-  display: none !important;
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] main.main-surface div:has(> aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source) {
+  z-index: 21;
+  overflow: visible !important;
 }
 
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-mirror {
-  position: relative !important;
-  inset: auto !important;
-  display: block !important;
-  width: 100% !important;
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source {
+  position: absolute !important;
+  z-index: 41 !important;
+  top: var(--dream-token-runtime-undecide-top) !important;
+  left: var(--dream-token-runtime-undecide-left) !important;
+  width: var(--dream-token-runtime-undecide-width) !important;
+  height: var(--dream-token-runtime-undecide-height) !important;
   min-width: 0 !important;
-  height: 100% !important;
   min-height: 0 !important;
   margin: 0 !important;
+  display: block !important;
   overflow: hidden !important;
+  pointer-events: auto !important;
   color: var(--dream-token-color-text-primary) !important;
   background: var(--dream-token-color-canvas) !important;
   border: none !important;
   box-shadow: var(--dream-token-shadow-none) !important;
 }
 
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-mirror > div {
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source > div {
   height: 100% !important;
   min-height: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source > div.absolute.inset-0 > div.absolute {
+  right: 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source [data-app-shell-tabs] > :has(> [data-app-shell-tab-strip-controller="right"]) {
+  display: none !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source [role="tabpanel"] nav[aria-label="File path"] {
+  display: none !important;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [role="dialog"],
@@ -1579,6 +1708,8 @@
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel nav > .vertical-scroll-fade-mask {
   scrollbar-width: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel nav > .vertical-scroll-fade-mask::-webkit-scrollbar {
@@ -1594,13 +1725,17 @@
   flex: 1 1 auto !important;
   min-height: 0 !important;
   isolation: isolate;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
   border: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong) !important;
   box-shadow: inset 0 calc(var(--dream-token-stroke-strong) * -1) 0 var(--dream-token-color-line-strong) !important;
 }
 
-/* Keep the Project lower edge above virtualized rows at every scroll position. */
+/* Remove Codex's native scroll fades from the Project viewport. */
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects::before,
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects::after {
-  display: none;
+  content: none !important;
+  display: none !important;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] #codex-dream-skin-project-bottom-frame {
@@ -1609,7 +1744,9 @@
   display: block;
   box-sizing: border-box;
   pointer-events: none;
-  background: var(--dream-token-color-line-strong);
+  background: var(--dream-token-color-transparent);
+  border-left: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong);
+  border-bottom: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong);
   box-shadow: var(--dream-token-shadow-none);
 }
 
@@ -1623,7 +1760,7 @@
   position: absolute;
   z-index: 1;
   inset: 0 auto 0 15px;
-  width: var(--dream-token-stroke-subtle);
+  width: var(--dream-token-stroke-project-tree);
   background: var(--dream-token-color-line-default);
   pointer-events: none;
 }
@@ -1642,7 +1779,7 @@
   top: 50%;
   left: 15px;
   width: 9px;
-  border-top: var(--dream-token-stroke-subtle) solid var(--dream-token-color-line-default);
+  border-top: var(--dream-token-stroke-project-tree) solid var(--dream-token-color-line-default);
   pointer-events: none;
 }
 
@@ -1728,6 +1865,236 @@
   box-shadow: var(--dream-token-shadow-none) !important;
 }
 
+/* Codex CLI transcript: one continuous log, compact prompts, no chat cards. */
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll {
+  --conversation-item-gap: 4px;
+  font-family: var(--dream-token-font-chrome) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-thread-find-target="conversation"] {
+  gap: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-mcp-app-portal-target="true"] {
+  padding-bottom: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-turn-key] {
+  --conversation-item-gap: 4px;
+  box-sizing: border-box;
+  margin: 0 !important;
+  padding: 4px 0 6px !important;
+  color: var(--dream-token-color-text-primary) !important;
+  border-bottom: var(--dream-token-stroke-subtle) solid var(--dream-token-color-line-subtle);
+  font: 400 var(--dream-token-layout-cli-font-size)/var(--dream-token-layout-cli-line-height) var(--dream-token-font-chrome) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-turn-key] *,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-turn-key] code,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-turn-key] pre {
+  font-family: var(--dream-token-font-chrome) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-user-anchor="true"],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-item-target-ids] {
+  display: grid !important;
+  grid-template-columns: var(--dream-token-layout-cli-prompt-column) minmax(0, 1fr);
+  align-items: start;
+  gap: 0 var(--dream-token-layout-cli-entry-gap) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 2px 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-user-anchor="true"]::before,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"]::before,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-item-target-ids]::before {
+  grid-column: 1;
+  padding-top: 1px;
+  font: 700 var(--dream-token-layout-cli-font-size)/var(--dream-token-layout-cli-line-height) var(--dream-token-font-chrome);
+  letter-spacing: .02em;
+  white-space: nowrap;
+  text-shadow: var(--dream-token-shadow-text);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-user-anchor="true"]::before {
+  content: "YOU >";
+  color: var(--dream-token-color-accent-hot);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"]::before {
+  content: "CODEX >";
+  color: var(--dream-token-color-positive);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-item-target-ids]::before {
+  content: "SYSTEM";
+  color: var(--dream-token-color-text-secondary);
+  font-weight: 400;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-user-anchor="true"] > *,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"] > *,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-item-target-ids] > * {
+  grid-column: 2;
+  min-width: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-user-anchor="true"] [class*="items-end"] {
+  align-items: flex-start !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-user-message-bubble="true"] {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  color: var(--dream-token-color-text-primary) !important;
+  text-align: left !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-user-message-bubble="true"] + div {
+  min-height: 14px !important;
+  height: 14px !important;
+  margin: 0 !important;
+  flex-direction: row !important;
+  justify-content: flex-start !important;
+  color: var(--dream-token-color-text-secondary) !important;
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"] [data-selected-text-overlay-target] > p,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"] [data-selected-text-overlay-target] > ul,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"] [data-selected-text-overlay-target] > ol,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"] [data-selected-text-overlay-target] > blockquote {
+  margin-top: 0 !important;
+  margin-bottom: 3px !important;
+  line-height: var(--dream-token-layout-cli-line-height) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"] li {
+  margin-block: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"] h1,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"] h2,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"] h3,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-content-search-unit-key$=":assistant"] h4 {
+  margin: 5px 0 2px !important;
+  color: var(--dream-token-color-accent-hot) !important;
+  font-size: 1em !important;
+  line-height: var(--dream-token-layout-cli-line-height) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll span.text-token-conversation-body:not(button span) {
+  color: var(--dream-token-color-text-secondary) !important;
+  font: 400 11px/16px var(--dream-token-font-chrome) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll div:has(> span.text-token-conversation-body) {
+  min-height: 16px !important;
+  gap: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-item-target-ids] button.group\/activity-header {
+  min-height: 20px !important;
+  padding: 1px 0 !important;
+  color: var(--dream-token-color-text-secondary) !important;
+  background: var(--dream-token-color-transparent) !important;
+  border: none !important;
+  box-shadow: var(--dream-token-shadow-none) !important;
+  font-size: 12px !important;
+  line-height: 18px !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-item-target-ids]:has(button[aria-expanded="false"]) > div {
+  min-height: 20px !important;
+  height: auto !important;
+  max-height: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-local-conversation-item-target-ids] button[aria-expanded="false"] {
+  min-height: 20px !important;
+  height: auto !important;
+  max-height: none !important;
+  padding: 1px 0 !important;
+  overflow: hidden !important;
+  align-items: center !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-assistant-message-sent-time="true"] {
+  opacity: var(--dream-token-effect-visible-opacity) !important;
+  color: var(--dream-token-color-text-secondary) !important;
+  font-size: 10px !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll .dream-cli-collapsible {
+  position: relative !important;
+  cursor: pointer !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll pre.dream-cli-collapsible[data-dream-cli-expanded="false"] {
+  box-sizing: border-box;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  margin: 2px 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  color: var(--dream-token-color-transparent) !important;
+  background: var(--dream-token-color-transparent) !important;
+  border: none !important;
+  box-shadow: var(--dream-token-shadow-none) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll pre.dream-cli-collapsible[data-dream-cli-expanded="false"] > * {
+  opacity: var(--dream-token-effect-hidden-opacity) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll pre.dream-cli-collapsible[data-dream-cli-expanded="false"]::after,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll .dream-cli-collapsible[data-dream-cli-kind="IMAGE"][data-dream-cli-expanded="false"]::after {
+  content: "[" attr(data-dream-cli-kind) "] " attr(data-dream-cli-summary) "  [ENTER TO EXPAND]";
+  position: absolute;
+  inset: 0;
+  display: block;
+  box-sizing: border-box;
+  padding: 5px 4px;
+  overflow: hidden;
+  color: var(--dream-token-color-text-secondary) !important;
+  background: var(--dream-token-color-canvas) !important;
+  font: 400 12px/18px var(--dream-token-font-chrome) !important;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll .dream-cli-collapsible[data-dream-cli-kind="IMAGE"][data-dream-cli-expanded="false"] {
+  display: block !important;
+  box-sizing: border-box;
+  width: 100% !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  max-height: 28px !important;
+  margin: 2px 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: var(--dream-token-color-transparent) !important;
+  border: none !important;
+  box-shadow: var(--dream-token-shadow-none) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll .dream-cli-collapsible[data-dream-cli-kind="IMAGE"][data-dream-cli-expanded="false"] img {
+  opacity: var(--dream-token-effect-hidden-opacity) !important;
+  pointer-events: none !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll .dream-cli-collapsible[data-dream-cli-expanded="true"] {
+  max-height: none !important;
+}
+
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] code,
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] pre,
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] kbd {
@@ -1766,7 +2133,16 @@
   display: block !important;
   overflow: hidden !important;
   pointer-events: none !important;
+  /* Blurred backdrop is intentionally translucent: sharp UI + bright blur copy = Bloom. */
+  opacity: var(--dream-token-effect-bloom-opacity);
+  backdrop-filter: blur(5px) brightness(1.28) saturate(1.2);
   background: var(--dream-token-background-vignette);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-message-author-role],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects [data-app-action-sidebar-thread-row],
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-codeburn-monitor {
+  text-shadow: var(--dream-token-shadow-text) !important;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] #codex-dream-skin-chrome::before,
@@ -1778,8 +2154,15 @@
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] #codex-dream-skin-chrome::before {
-  opacity: var(--dream-token-effect-scanline-opacity);
+  opacity: var(--dream-token-effect-scanline-depth);
   background: var(--dream-token-background-scanlines);
+  animation: dream-tactical-scanlines-scroll var(--dream-token-effect-scanline-speed) linear infinite;
+  will-change: background-position;
+}
+
+@keyframes dream-tactical-scanlines-scroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 calc(var(--dream-token-effect-scanline-width) * 3); }
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] #codex-dream-skin-chrome::after {
@@ -1985,13 +2368,6 @@
 }
 
 @media (min-width: 1180px) {
-  :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel {
-    width: var(--dream-token-layout-left-rail-width) !important;
-    min-width: var(--dream-token-layout-left-rail-width) !important;
-    max-width: var(--dream-token-layout-left-rail-width) !important;
-    flex-basis: var(--dream-token-layout-left-rail-width) !important;
-  }
-
   :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] main.main-surface {
     padding-right: var(--dream-token-layout-right-rail-total) !important;
     background: var(--dream-token-color-transparent) !important;
@@ -2031,6 +2407,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] #codex-dream-skin-chrome::before {
+    animation: none !important;
+  }
+
   :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] *,
   :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] *::before,
   :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] *::after {

@@ -441,9 +441,13 @@ const THEME_TOKEN_KEYS = {
     "canvas", "surface", "surfaceRaised", "textPrimary", "textSecondary", "accent", "phosphor", "positive",
     "lineStrong", "lineDefault", "lineSubtle",
   ]),
-  strokes: new Set(["subtle", "default", "strong", "focus"]),
+  strokes: new Set(["subtle", "default", "strong", "focus", "projectTree"]),
   radii: new Set(["panel", "control"]),
-  effects: new Set(["scanlineOpacity", "gridOpacity", "vignetteOpacity", "brandOpacity"]),
+  effects: new Set([
+    "scanlineOpacity", "scanlineWidth", "scanlineDepth", "scanlineSpeed",
+    "gridOpacity", "vignetteOpacity", "brandOpacity",
+  ]),
+  layout: new Set(["titleHeight"]),
 };
 
 function normalizedUnit(value, name) {
@@ -476,7 +480,7 @@ function normalizedThemeId(value) {
 
 function normalizedThemeTokens(value) {
   const raw = value && typeof value === "object" && !Array.isArray(value) ? value : {};
-  const tokens = { colors: {}, strokes: {}, radii: {}, effects: {} };
+  const tokens = { colors: {}, strokes: {}, radii: {}, effects: {}, layout: {} };
   const colors = raw.colors && typeof raw.colors === "object" && !Array.isArray(raw.colors)
     ? raw.colors : {};
   for (const key of THEME_TOKEN_KEYS.colors) {
@@ -484,7 +488,7 @@ function normalizedThemeTokens(value) {
     const candidate = colors[key].trim();
     if (isSafeCssColor(candidate)) tokens.colors[key] = candidate;
   }
-  for (const [group, maximum] of [["strokes", 50], ["radii", 16], ["effects", .35]]) {
+  for (const [group, maximum] of [["strokes", 50], ["radii", 16]]) {
     const source = raw[group] && typeof raw[group] === "object" && !Array.isArray(raw[group])
       ? raw[group] : {};
     for (const key of THEME_TOKEN_KEYS[group]) {
@@ -494,6 +498,29 @@ function normalizedThemeTokens(value) {
       }
       tokens[group][key] = candidate;
     }
+  }
+  const effects = raw.effects && typeof raw.effects === "object" && !Array.isArray(raw.effects)
+    ? raw.effects : {};
+  for (const [key, minimum, maximum] of [
+    ["scanlineOpacity", 0, .35],
+    ["scanlineWidth", .5, 12],
+    ["scanlineDepth", 0, .6],
+    ["scanlineSpeed", .25, 120],
+    ["gridOpacity", 0, .35],
+    ["vignetteOpacity", 0, .35],
+    ["brandOpacity", 0, .35],
+  ]) {
+    const candidate = effects[key];
+    if (typeof candidate !== "number" || !Number.isFinite(candidate) ||
+        candidate < minimum || candidate > maximum) continue;
+    tokens.effects[key] = candidate;
+  }
+  const layout = raw.layout && typeof raw.layout === "object" && !Array.isArray(raw.layout)
+    ? raw.layout : {};
+  const titleHeight = layout.titleHeight;
+  if (typeof titleHeight === "number" && Number.isFinite(titleHeight) &&
+      titleHeight >= 24 && titleHeight <= 72) {
+    tokens.layout.titleHeight = titleHeight;
   }
   return tokens;
 }

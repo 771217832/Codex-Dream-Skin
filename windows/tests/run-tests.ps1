@@ -678,8 +678,11 @@ try {
     $tacticalTheme.Theme.tokens.colors.canvas -cne '#030201' -or
     $tacticalTheme.Theme.tokens.strokes.default -ne 1 -or
     $tacticalTheme.Theme.tokens.strokes.strong -ne 2 -or
+    $tacticalTheme.Theme.tokens.strokes.projectTree -ne 2 -or
     $tacticalTheme.Theme.tokens.radii.control -ne 0 -or
-    $tacticalTheme.Theme.tokens.effects.scanlineOpacity -ne 0.16 -or
+    $tacticalTheme.Theme.tokens.effects.scanlineWidth -ne 2 -or
+    $tacticalTheme.Theme.tokens.effects.scanlineDepth -ne 0.26 -or
+    $tacticalTheme.Theme.tokens.effects.scanlineSpeed -ne 1.8 -or
     $tacticalTheme.Theme.tokens.effects.brandOpacity -ne 0.13) {
     throw 'Codex Tactical CRT did not preserve its appearance, art, and token contract.'
   }

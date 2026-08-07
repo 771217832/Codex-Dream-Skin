@@ -56,6 +56,7 @@ function createFixture({
   let hasBrandModule = brandFixture;
   let hasSummaryPanel = summaryPanelPresent;
   let root;
+  const storage = new Map();
 
   const queueRootClassMutation = () => {
     for (const observer of observers) {
@@ -116,7 +117,9 @@ function createFixture({
         for (const child of children) node.appendChild(child);
       },
       getAttribute(name) { return attributes.get(name) ?? null; },
+      getAttributeNames() { return [...attributes.keys()]; },
       setAttribute(name, value) { attributes.set(name, String(value)); },
+      removeAttribute(name) { attributes.delete(name); },
       addEventListener(type, listener) {
         if (!listeners.has(type)) listeners.set(type, new Set());
         listeners.get(type).add(listener);
@@ -131,19 +134,28 @@ function createFixture({
       setPointerCapture() {},
       releasePointerCapture() {},
       matches(selector) {
-        if (selector === "section") return node.tagName === "SECTION";
-        if (selector === "button") return node.tagName === "BUTTON";
-        if (selector === "img") return node.tagName === "IMG";
-        if (selector === "div") return node.tagName === "DIV";
+        if (/^[a-z][\w-]*$/i.test(selector)) return node.tagName === selector.toUpperCase();
         const exactClass = /^\.([\w/-]+)$/.exec(selector)?.[1];
         if (exactClass) return classes.has(exactClass);
         const classWord = /^\[class~="([^"]+)"\]$/.exec(selector)?.[1];
         if (classWord) return classes.has(classWord);
         const classSubstring = /^\[class\*="([^"]+)"\]$/.exec(selector)?.[1];
         if (classSubstring) return [...classes].some((value) => value.includes(classSubstring));
+        const attributeExists = /^\[([^=\]]+)\]$/.exec(selector)?.[1];
+        if (attributeExists) return attributes.has(attributeExists);
+        const attributeSuffix = /^\[([^\]]+)\$="([^"]*)"\]$/.exec(selector);
+        if (attributeSuffix) return attributes.get(attributeSuffix[1])?.endsWith(attributeSuffix[2]) || false;
         const exactAttribute = /^\[([^=\]]+)="([^"]*)"\]$/.exec(selector);
         if (exactAttribute) return attributes.get(exactAttribute[1]) === exactAttribute[2];
         return false;
+      },
+      closest(selector) {
+        let candidate = node;
+        while (candidate) {
+          if (selector.split(",").some((part) => candidate.matches?.(part.trim()))) return candidate;
+          candidate = candidate.parentElement;
+        }
+        return null;
       },
       querySelector(selector) {
         if (selector === ":scope > section") {
@@ -201,7 +213,9 @@ function createFixture({
     },
   };
   const shellMain = makeFixtureNode("main", ["main-surface"]);
-  shellMain.getBoundingClientRect = () => ({ left: 290, top: 36, width: 990, height: 784 });
+  shellMain.getBoundingClientRect = () => ({
+    left: 290, top: 36, right: 1280, bottom: 820, width: 990, height: 784,
+  });
   let topBar = null;
   if (topBarFixture) {
     topBar = makeFixtureNode("div", ["group/application-menu-top-bar"]);
@@ -251,6 +265,9 @@ function createFixture({
     actions.getBoundingClientRect = () => ({ height: 170 });
     const actionButton = makeFixtureNode("button");
     const projects = makeFixtureNode("div", ["sidebar-project-fixture"]);
+    projects.getBoundingClientRect = () => ({
+      left: 8, top: 304, right: 298, bottom: 760, width: 290, height: 456,
+    });
     const projectTitle = makeFixtureNode("div", ["group/nav-section-title"]);
     const projectCwd = makeFixtureNode("div", ["group/cwd"]);
     const tasks = makeFixtureNode("section", ["sidebar-task-fixture"]);
@@ -288,6 +305,25 @@ function createFixture({
   if (composerFixture) {
     const threadScroll = makeFixtureNode("div", ["thread-scroll-container"]);
     const conversation = makeFixtureNode("div", ["conversation-fixture"]);
+    const turn = makeFixtureNode("div", ["turn-fixture"]);
+    turn.setAttribute("data-turn-key", "turn-fixture");
+    const codeBlock = makeFixtureNode("pre", ["code-fixture"]);
+    codeBlock.textContent = "line one\nline two\nline three\nline four";
+    const imageContainer = makeFixtureNode("div", ["image-container-fixture"]);
+    const transcriptImage = makeFixtureNode("img", ["image-fixture"]);
+    transcriptImage.setAttribute("alt", "reference.png");
+    imageContainer.appendChild(transcriptImage);
+    const toolGroup = makeFixtureNode("div", ["tool-group-fixture"]);
+    toolGroup.setAttribute("data-local-conversation-item-target-ids", "tool-fixture");
+    const toolButton = makeFixtureNode("button", ["group/activity-header"]);
+    toolButton.setAttribute("aria-expanded", "false");
+    const toolIcon = makeFixtureNode("img", ["tool-icon-fixture"]);
+    toolButton.appendChild(toolIcon);
+    toolGroup.appendChild(toolButton);
+    turn.appendChild(codeBlock);
+    turn.appendChild(imageContainer);
+    turn.appendChild(toolGroup);
+    conversation.appendChild(turn);
     const composerSection = makeFixtureNode("div", ["composer-section-fixture"]);
     composerSection.setAttribute("data-thread-scroll-footer", "true");
     const composerSurface = makeFixtureNode("div", ["composer-surface-chrome"]);
@@ -307,7 +343,9 @@ function createFixture({
     threadScroll.appendChild(composerSection);
     shellMain.appendChild(threadScroll);
     composer = {
-      threadScroll, conversation, composerSection, composerSurface, inputLine, editable, statusBar,
+      threadScroll, conversation, turn, codeBlock, imageContainer, transcriptImage,
+      toolGroup, toolButton, toolIcon,
+      composerSection, composerSurface, inputLine, editable, statusBar,
     };
   }
 
@@ -392,6 +430,10 @@ function createFixture({
       matchMedia() { return { matches: osAppearance === "dark" }; },
     },
     document,
+    localStorage: {
+      getItem(key) { return storage.get(key) ?? null; },
+      setItem(key, value) { storage.set(key, String(value)); },
+    },
     MutationObserver: class {
       constructor(callback) {
         this.callback = callback;
@@ -463,6 +505,7 @@ function createFixture({
     topBar,
     sidebar,
     composer,
+    storage,
     get fetchCount() { return fetchCount; },
     advanceTime(milliseconds) { fixtureNow += milliseconds; },
     setShellPresent(value) {
@@ -544,6 +587,16 @@ assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-sidebar-naviga
 assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-sidebar-project-frame-top"), "304px");
 assert.equal(sidebarModules.nodes.has("codex-dream-skin-project-scrollbar"), true,
   "The Tactical preset must bind its scrollbar overlay to the Project module.");
+assert.equal(
+  sidebarModules.nodes.get("codex-dream-skin-project-scrollbar").parentElement,
+  sidebarModules.sidebar.aside,
+  "The Project scrollbar must be anchored inside the resizable sidebar.",
+);
+const projectBottomFrame = sidebarModules.nodes.get("codex-dream-skin-project-bottom-frame");
+assert.equal(projectBottomFrame.style.top, "758px",
+  "Project frame extension must begin where the native Project border ends.");
+assert.equal(projectBottomFrame.style.height, "62px",
+  "Project frame extension must reach the MAINTASK lower edge.");
 sidebarModules.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
 for (const [index, node] of originalNavChildren.entries()) {
   assert.equal(sidebarModules.sidebar.nav.children[index], node,
@@ -574,6 +627,33 @@ assert.equal(sidebarModules.sidebar.projects.classList.contains("dream-sidebar-p
 assert.equal(sidebarModules.sidebar.tasks.classList.contains("dream-sidebar-tasks"), false);
 assert.equal(sidebarModules.sidebar.nativeFooter.classList.contains("dream-sidebar-native-footer"), false);
 assert.equal(sidebarModules.nodes.has("codex-dream-skin-footer"), false);
+assert.equal(sidebarModules.nodes.has("codex-dream-skin-project-bottom-frame"), false);
+
+const tacticalPalette = createFixture({ shellPresent: true, sidebarFixture: true });
+vm.runInNewContext(buildPayload({ id: "preset-codex-tactical-crt" }), tacticalPalette.context);
+const paletteFooter = tacticalPalette.nodes.get("codex-dream-skin-footer");
+const paletteButtons = paletteFooter.querySelectorAll(".dream-footer-theme-button");
+const paletteButton = (name) => paletteButtons.find((button) =>
+  button.getAttribute("data-dream-tactical-palette") === name,
+);
+assert.equal(paletteButtons.length, 4, "The Tactical footer must expose four palette buttons.");
+assert.equal(paletteFooter.getAttribute("aria-hidden"), null);
+assert.equal(paletteButton("amber").getAttribute("aria-pressed"), "true");
+assert.equal(paletteButton("amber").textContent, "[01 AMBER]");
+paletteButton("cobalt").dispatch("click");
+assert.equal(tacticalPalette.rootStyles.get("--dream-token-color-accent"), "#4a94ff");
+assert.equal(tacticalPalette.rootStyles.get("--dream-token-color-line-strong"), "rgb(55 145 255 / 0.94)");
+assert.equal(tacticalPalette.storage.get("codex-dream-skin.tactical-palette"), "cobalt");
+assert.equal(paletteButton("cobalt").getAttribute("aria-pressed"), "true");
+tacticalPalette.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
+assert.equal(tacticalPalette.rootStyles.get("--dream-token-color-accent"), "#4a94ff",
+  "The selected palette must survive routine skin refreshes.");
+vm.runInNewContext(buildPayload({ id: "preset-codex-tactical-crt" }), tacticalPalette.context);
+assert.equal(tacticalPalette.nodes.get("codex-dream-skin-footer")
+  .querySelectorAll(".dream-footer-theme-button")
+  .find((button) => button.getAttribute("data-dream-tactical-palette") === "cobalt")
+  .getAttribute("aria-pressed"), "true", "The selected palette must survive reinjection.");
+assert.equal(tacticalPalette.context.window.__CODEX_DREAM_SKIN_STATE__.cleanup(), true);
 
 const mainLayout = createFixture({
   shellPresent: true,
@@ -584,6 +664,18 @@ assert.equal(mainLayout.composer.threadScroll.classList.contains("dream-main-thr
 assert.equal(mainLayout.composer.composerSection.classList.contains("dream-main-composer-section"), true);
 assert.equal(mainLayout.composer.inputLine.classList.contains("dream-composer-input-line"), true);
 assert.equal(mainLayout.composer.statusBar.classList.contains("dream-composer-status-bar"), true);
+assert.equal(mainLayout.composer.codeBlock.classList.contains("dream-cli-collapsible"), true);
+assert.equal(mainLayout.composer.codeBlock.getAttribute("data-dream-cli-kind"), "CODE");
+assert.equal(mainLayout.composer.codeBlock.getAttribute("data-dream-cli-expanded"), "false");
+assert.equal(mainLayout.composer.codeBlock.getAttribute("role"), "button");
+assert.equal(mainLayout.composer.codeBlock.listenerCount("click"), 1);
+assert.equal(mainLayout.composer.imageContainer.classList.contains("dream-cli-collapsible"), true);
+assert.equal(mainLayout.composer.imageContainer.getAttribute("data-dream-cli-kind"), "IMAGE");
+assert.equal(mainLayout.composer.toolButton.classList.contains("dream-cli-collapsible"), false,
+  "CLI image folding must not capture native tool activity icons.");
+mainLayout.composer.codeBlock.dispatch("click");
+assert.equal(mainLayout.composer.codeBlock.getAttribute("data-dream-cli-expanded"), "true",
+  "CLI transcript blocks must expand without replacing native conversation content.");
 mainLayout.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
 assert.equal(mainLayout.composer.composerSection.classList.contains("dream-main-composer-section"), true,
   "Repeated layout classification must remain idempotent.");
@@ -592,6 +684,10 @@ assert.equal(mainLayout.composer.threadScroll.classList.contains("dream-main-thr
 assert.equal(mainLayout.composer.composerSection.classList.contains("dream-main-composer-section"), false);
 assert.equal(mainLayout.composer.inputLine.classList.contains("dream-composer-input-line"), false);
 assert.equal(mainLayout.composer.statusBar.classList.contains("dream-composer-status-bar"), false);
+assert.equal(mainLayout.composer.codeBlock.classList.contains("dream-cli-collapsible"), false);
+assert.equal(mainLayout.composer.codeBlock.getAttribute("data-dream-cli-expanded"), null);
+assert.equal(mainLayout.composer.codeBlock.getAttribute("role"), null);
+assert.equal(mainLayout.composer.codeBlock.listenerCount("click"), 0);
 
 const tacticalTopBar = createFixture({ shellPresent: true, topBarFixture: true });
 vm.runInNewContext(buildPayload({ id: "preset-codex-tactical-crt" }), tacticalTopBar.context);
@@ -632,7 +728,7 @@ const rightRailModules = rightRail.children.filter((node) =>
   node.classList.contains("dream-tactical-right-module"));
 assert.equal(rightRailModules.length, 2);
 assert.ok(rightRail.children.some((node) => node.classList.contains("dream-tactical-right-resizer")));
-assert.deepEqual(rightRailModules.map((module) => module.children[0].textContent), ["UNDECIDE", "MONITOR"]);
+assert.deepEqual(rightRailModules.map((module) => module.children[0].textContent), ["DETAIL", "MONITOR"]);
 for (const module of rightRailModules) {
   const body = module.children[1];
   assert.equal(body.classList.contains("dream-tactical-right-body"), true);
@@ -641,8 +737,15 @@ const monitorModule = rightRailModules.find((module) => module.dataset.dreamTact
 assert.equal(monitorModule.children[1].children[0].classList.contains("dream-codeburn-monitor"), true);
 assert.equal(monitorModule.children[1].children[0].children.length, 3,
   "CodeBurn monitor must render activity, Token, and daily-spend sections.");
+const dailySpend = monitorModule.children[1].children[0].children[2];
+const dailySpendBars = dailySpend.children[1];
+assert.equal(dailySpendBars.classList.contains("dream-codeburn-bars"), true);
+assert.equal(dailySpendBars.children.length, 30,
+  "Daily spend must retain every one of the 30 daily bars.");
 assert.equal(monitorModule.children[1].children[0].children[2].children[2].children.length, 6,
   "Daily spend must label every six days plus the final day.");
+assert.equal(monitorModule.children[1].children[0].children[2].children[3].children.length, 3,
+  "Daily spend must show a three-point consumption scale.");
 tacticalRightRail.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
 assert.equal(tacticalRightRail.nodes.get("codex-dream-skin-right-rail"), rightRail,
   "Repeated ensure passes must preserve the right rail.");
@@ -743,14 +846,18 @@ const tokenizedPayload = buildPayload({
       lineSubtle: "rgb(1 2 3 4)",
       unknown: "#ffffff",
     },
-    strokes: { subtle: 0, default: 1, strong: 50, focus: 50.01 },
+    strokes: { subtle: 0, default: 1, strong: 50, focus: 50.01, projectTree: 3 },
     radii: { panel: 0, control: 2, invalid: 4 },
     effects: {
       scanlineOpacity: 0.08,
+      scanlineWidth: 2.5,
+      scanlineDepth: 0.28,
+      scanlineSpeed: 7,
       gridOpacity: 0.36,
       vignetteOpacity: 0.22,
       brandOpacity: 0.14,
     },
+    layout: { titleHeight: 42 },
   },
 });
 vm.runInNewContext(tokenizedPayload, tokenized.context);
@@ -762,10 +869,15 @@ assert.equal(tokenized.rootStyles.get("--dream-accent"), "rgb(214 166 75 / 0.9)"
   "The token accent must override the legacy palette accent.");
 assert.equal(tokenized.rootStyles.get("--dream-token-stroke-subtle"), "0px");
 assert.equal(tokenized.rootStyles.get("--dream-token-stroke-strong"), "50px");
+assert.equal(tokenized.rootStyles.get("--dream-token-stroke-project-tree"), "3px");
 assert.equal(tokenized.rootStyles.has("--dream-token-stroke-focus"), false);
 assert.equal(tokenized.rootStyles.get("--dream-token-radius-control"), "2px");
 assert.equal(tokenized.rootStyles.get("--dream-token-effect-scanline-opacity"), "0.08");
+assert.equal(tokenized.rootStyles.get("--dream-token-effect-scanline-width"), "2.5px");
+assert.equal(tokenized.rootStyles.get("--dream-token-effect-scanline-depth"), "0.28");
+assert.equal(tokenized.rootStyles.get("--dream-token-effect-scanline-speed"), "7s");
 assert.equal(tokenized.rootStyles.get("--dream-token-effect-brand-opacity"), "0.14");
+assert.equal(tokenized.rootStyles.get("--dream-token-layout-title-height"), "42px");
 assert.equal(tokenized.rootStyles.has("--dream-token-effect-grid-opacity"), false);
 assert.equal(tokenized.rootStyles.has("--dream-token-color-line-strong"), false);
 assert.equal(tokenized.rootStyles.has("--dream-token-color-line-default"), false);
@@ -775,6 +887,10 @@ assert.equal(tokenized.rootAttributes.has("data-dream-theme-id"), false);
 assert.equal(tokenized.rootStyles.has("--dream-token-color-accent"), false);
 assert.equal(tokenized.rootStyles.has("--dream-token-color-phosphor"), false);
 assert.equal(tokenized.rootStyles.has("--dream-token-effect-brand-opacity"), false);
+assert.equal(tokenized.rootStyles.has("--dream-token-effect-scanline-width"), false);
+assert.equal(tokenized.rootStyles.has("--dream-token-effect-scanline-depth"), false);
+assert.equal(tokenized.rootStyles.has("--dream-token-effect-scanline-speed"), false);
+assert.equal(tokenized.rootStyles.has("--dream-token-layout-title-height"), false);
 
 const tacticalBrand = createFixture({ shellPresent: true, brandFixture: true });
 vm.runInNewContext(buildPayload({ id: "preset-codex-tactical-crt" }), tacticalBrand.context);

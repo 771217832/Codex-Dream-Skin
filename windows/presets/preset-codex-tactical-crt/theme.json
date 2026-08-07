@@ -31,17 +31,23 @@
       "subtle": 1,
       "default": 1,
       "strong": 2,
-      "focus": 2
+      "focus": 2,
+      "projectTree": 2
     },
     "radii": {
       "panel": 0,
       "control": 0
     },
     "effects": {
-      "scanlineOpacity": 0.16,
+      "scanlineWidth": 2,
+      "scanlineDepth": 0.26,
+      "scanlineSpeed": 1.8,
       "gridOpacity": 0.08,
       "vignetteOpacity": 0.28,
       "brandOpacity": 0.13
+    },
+    "layout": {
+      "titleHeight": 38
     }
   }
 }

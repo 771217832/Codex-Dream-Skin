@@ -11,12 +11,13 @@ const windowsRoot = path.resolve(here, "..");
 const presetId = "preset-codex-tactical-crt";
 const presetRoot = path.join(windowsRoot, "presets", presetId);
 const cssPath = path.join(windowsRoot, "assets", "presets", `${presetId}.css`);
-const [css, themeText, background, assetNotes, injectorSource] = await Promise.all([
+const [css, themeText, background, assetNotes, injectorSource, rendererSource] = await Promise.all([
   fs.readFile(cssPath, "utf8"),
   fs.readFile(path.join(presetRoot, "theme.json"), "utf8"),
   fs.readFile(path.join(presetRoot, "background.jpg")),
   fs.readFile(path.join(presetRoot, "ASSET.md"), "utf8"),
   fs.readFile(path.join(windowsRoot, "scripts", "injector.mjs"), "utf8"),
+  fs.readFile(path.join(windowsRoot, "assets", "renderer-inject.js"), "utf8"),
 ]);
 
 const theme = JSON.parse(themeText);
@@ -42,14 +43,17 @@ assert.deepEqual(theme.tokens.colors, {
   lineDefault: "rgb(195 116 18 / 0.78)",
   lineSubtle: "rgb(195 116 18 / 0.24)",
 });
-assert.deepEqual(theme.tokens.strokes, { subtle: 1, default: 1, strong: 2, focus: 2 });
+assert.deepEqual(theme.tokens.strokes, { subtle: 1, default: 1, strong: 2, focus: 2, projectTree: 2 });
 assert.deepEqual(theme.tokens.radii, { panel: 0, control: 0 });
 assert.deepEqual(theme.tokens.effects, {
-  scanlineOpacity: 0.16,
+  scanlineWidth: 2,
+  scanlineDepth: 0.26,
+  scanlineSpeed: 1.8,
   gridOpacity: 0.08,
   vignetteOpacity: 0.28,
   brandOpacity: 0.13,
 });
+assert.deepEqual(theme.tokens.layout, { titleHeight: 38 });
 
 assert.deepEqual(readImageMetadata(background, ".jpg"), {
   width: 2560,
@@ -142,37 +146,61 @@ assert.match(css, /\.dream-sidebar-projects\s*\{[\s\S]*?border:/i);
 assert.match(css, /--dream-token-label-navigation:\s*"NAVIGATION"/i);
 assert.match(css, /--dream-token-label-projects:\s*"PROJECT"/i);
 assert.match(css, /--dream-token-label-main:\s*"MAINTASK"/i);
-assert.match(css, /--dream-token-label-undecide:\s*"UNDECIDE"/i);
+assert.match(css, /--dream-token-label-undecide:\s*"DETAIL"/i);
 assert.match(css, /--dream-token-label-monitor:\s*"MONITOR"/i);
 assert.match(css, /--dream-token-layout-app-bar-height:\s*72px/i);
 assert.match(css, /--dream-token-layout-footer-height:\s*48px/i);
 assert.match(css, /--dream-token-layout-panel-gap:\s*6px/i);
 assert.match(css, /--dream-token-layout-section-gap:\s*6px/i);
-assert.match(css, /--dream-token-layout-project-title-height:\s*38px/i);
+assert.match(css, /--dream-token-layout-project-title-height:\s*var\(--dream-token-layout-title-height\)/i);
 assert.match(css, /--dream-token-layout-header-inset:\s*5px/i);
 assert.match(css, /--dream-token-layout-menu-button-width:\s*126px/i);
 assert.match(css, /--dream-token-layout-active-shell-gap:\s*var\(--dream-token-layout-shell-gap\)/i);
 assert.match(css, /@media \(max-width:\s*980px\)[\s\S]*?--dream-token-layout-active-shell-gap:\s*var\(--dream-token-layout-shell-gap-compact\)/i);
 assert.match(css, /--dream-token-color-accent-hot:\s*color-mix\([\s\S]*?--dream-token-color-accent/i);
+assert.match(css, /--dream-token-effect-bloom-opacity:\s*0\.36/i);
+assert.match(css, /--dream-token-effect-scanline-width:\s*2px/i);
+assert.match(css, /--dream-token-effect-scanline-depth:\s*var\(--dream-token-effect-scanline-opacity\)/i);
+assert.match(css, /--dream-token-effect-scanline-speed:\s*1\.8s/i);
+assert.match(css, /#codex-dream-skin-chrome::before\s*\{[\s\S]*?opacity:\s*var\(--dream-token-effect-scanline-depth\)[\s\S]*?animation:\s*dream-tactical-scanlines-scroll\s+var\(--dream-token-effect-scanline-speed\)/i);
+assert.match(css, /@keyframes\s+dream-tactical-scanlines-scroll[\s\S]*?background-position:\s*0\s+calc\(var\(--dream-token-effect-scanline-width\)\s*\*\s*3\)/i);
+assert.match(css, /#codex-dream-skin-chrome\s*\{[\s\S]*?opacity:\s*var\(--dream-token-effect-bloom-opacity\)[\s\S]*?backdrop-filter:\s*blur\(5px\) brightness\(1\.28\) saturate\(1\.2\)/i);
 assert.match(css, /#codex-dream-skin-brand-mark\s*\{[\s\S]*?display:\s*none/i);
 assert.match(css, /#codex-dream-skin-footer\s*\{[\s\S]*?position:\s*fixed/i);
 assert.match(css, /\.dream-footer-online\s*\{[\s\S]*?--dream-token-color-positive/i);
 assert.match(css, /\.dream-footer-clock\s*\{[\s\S]*?right:/i);
+assert.match(css, /\.dream-footer-theme\s*\{[\s\S]*?pointer-events:\s*auto/i);
+assert.match(css, /\.dream-footer-theme-button\[aria-pressed="true"\]\s*\{[\s\S]*?--dream-token-color-accent/i);
 assert.match(css, /\.dream-tactical-footer-extra-control\s*\{[\s\S]*?display:\s*none/i);
 assert.match(css, /#codex-dream-skin-right-rail\s*\{[\s\S]*?display:\s*none/i);
 assert.match(css, /@media \(min-width:\s*1180px\)[\s\S]*?#codex-dream-skin-right-rail\s*\{[\s\S]*?display:\s*grid/i);
 assert.match(css, /\.dream-tactical-right-body\s*\{[\s\S]*?background:\s*var\(--dream-token-color-canvas\)/i);
 assert.match(css, /\.dream-codeburn-monitor\s*\{[\s\S]*?display:\s*grid/i);
 assert.match(css, /\.dream-codeburn-table\s+\.dream-codeburn-header\s*\{[\s\S]*?background:\s*var\(--dream-token-color-accent\)/i);
+assert.match(css, /\.dream-codeburn-spend\s*\{[\s\S]*?linear-gradient\(to right[\s\S]*?linear-gradient\(to bottom[\s\S]*?background-size:\s*10px\s+10px/i);
 assert.match(css, /\.dream-codeburn-bars\s*\{[\s\S]*?grid-template-columns:\s*repeat\(30/i);
-assert.match(css, /\.dream-codeburn-axis\s*\{[\s\S]*?grid-template-columns:\s*repeat\(30/i);
+assert.match(css, /\.dream-codeburn-bars\s*\{[\s\S]*?background:\s*none/i);
+assert.match(css, /\.dream-codeburn-bars span\s*\{[\s\S]*?repeating-linear-gradient\(to bottom/i);
+assert.match(css, /\.dream-codeburn-bars span\s*\{[\s\S]*?var\(--dream-token-color-accent\)/i);
+assert.match(css, /\.dream-codeburn-bars span\s*\{[\s\S]*?var\(--dream-token-color-transparent\)[\s\S]*?4px/i);
+assert.match(css, /\.dream-codeburn-axis\s*\{[\s\S]*?grid-column:\s*2[\s\S]*?grid-template-columns:\s*repeat\(30/i);
+assert.match(css, /\.dream-codeburn-scale\s*\{[\s\S]*?grid-column:\s*1[\s\S]*?grid-template-rows:\s*repeat\(3/i);
 assert.match(css, /\.dream-sidebar-native-footer\s*\{[\s\S]*?position:\s*fixed/i);
 assert.match(css, /vertical-scroll-fade-mask\s*\{[\s\S]*?scrollbar-width:\s*none\s*!important/i);
 assert.match(css, /vertical-scroll-fade-mask\s*\{[\s\S]*?overflow:\s*hidden\s*!important/i);
+assert.match(css, /vertical-scroll-fade-mask\s*\{[\s\S]*?mask-image:\s*none\s*!important/i);
+assert.match(css, /aside\.app-shell-left-panel\s*>\s*\[class~="max-w-full"\]\s*\{[\s\S]*?width:\s*100%\s*!important[\s\S]*?min-width:\s*0\s*!important[\s\S]*?flex:\s*1\s+1\s+auto\s*!important/i);
+assert.doesNotMatch(css, /aside\.app-shell-left-panel\s*\{[\s\S]*?width:\s*var\(--dream-token-layout-left-rail-width\)\s*!important/i,
+  "The Tactical preset must not override Codex's native resizable sidebar width.");
 assert.match(css, /\.dream-sidebar-projects\s*\{[\s\S]*?overflow-y:\s*auto\s*!important/i);
-assert.match(css, /#codex-dream-skin-project-scrollbar\s*\{[\s\S]*?position:\s*fixed[\s\S]*?pointer-events:\s*auto[\s\S]*?touch-action:\s*none/i);
+assert.match(css, /#codex-dream-skin-project-scrollbar\s*\{[\s\S]*?position:\s*absolute[\s\S]*?right:\s*calc\([\s\S]*?pointer-events:\s*auto[\s\S]*?touch-action:\s*none/i);
+assert.match(css, /#codex-dream-skin-project-bottom-frame\s*\{[\s\S]*?border-left:\s*var\(--dream-token-stroke-strong\)[\s\S]*?border-bottom:\s*var\(--dream-token-stroke-strong\)/i);
+assert.match(rendererSource, /layoutObserver\?\.observe\?\.\(tacticalAside\)[\s\S]*?layoutObserver\?\.observe\?\.\(tacticalProjects\)/i);
 assert.match(css, /\.dream-sidebar-projects\s*>\s*div\s*>\s*\[class~="group\/nav-section-title"\]\s*\{[\s\S]*?width:\s*100%[\s\S]*?margin-inline:\s*0/i);
 assert.match(css, /\[data-app-action-sidebar-project-list-id\]::before\s*\{[\s\S]*?--dream-token-color-line-default/i);
+assert.match(css, /--dream-token-stroke-project-tree:\s*2px/i);
+assert.match(css, /\[data-app-action-sidebar-project-list-id\]::before\s*\{[\s\S]*?width:\s*var\(--dream-token-stroke-project-tree\)/i);
+assert.match(css, /\[data-app-action-sidebar-thread-row\]::before\s*\{[\s\S]*?border-top:\s*var\(--dream-token-stroke-project-tree\)/i);
 assert.match(css, /\[data-app-action-sidebar-thread-row\]::after\s*\{[\s\S]*?content:\s*"\[DONE\]"/i);
 assert.match(css, /:has\(button\[aria-label="Stop"\]:not\(\[disabled\]\):not\(\[aria-disabled="true"\]\)\)[\s\S]*?\[data-app-action-sidebar-thread-active="true"\]::after\s*\{[\s\S]*?\[WORKING\][\s\S]*?\[LIVE\] IN PROGRESS/i);
 assert.match(css, /\.dream-tactical-topbar-hidden\s*\{[\s\S]*?display:\s*none/i);
@@ -214,7 +242,23 @@ assert.match(css, /\.composer-surface-chrome\s*,[\s\S]*?border:\s*none[\s\S]*?bo
 assert.match(css, /\[data-message-author-role="user"\] \*::before[\s\S]*?outline:\s*none\s*!important/i);
 assert.match(css, /\[data-user-message-bubble="true"\]\s*\{[\s\S]*?box-shadow:\s*var\(--dream-token-shadow-none\)/i);
 assert.match(css, /\[data-turn-key\]:has\(\[data-user-message-bubble="true"\]\) \[role="button"\]\.size-20[\s\S]*?border:\s*none\s*!important/i);
-assert.doesNotMatch(css, /@keyframes|animation(?:-name)?\s*:/i);
+assert.match(css, /--dream-token-layout-cli-prompt-column:\s*76px/i);
+assert.match(css, /\[data-thread-find-target="conversation"\]\s*\{[\s\S]*?gap:\s*0\s*!important/i);
+assert.match(css, /\[data-turn-key\]\s*\{[\s\S]*?--conversation-item-gap:\s*4px[\s\S]*?font:[\s\S]*?--dream-token-font-chrome/i);
+assert.match(css, /\[data-local-conversation-user-anchor="true"\]::before\s*\{[\s\S]*?content:\s*"YOU >"/i);
+assert.match(css, /\[data-content-search-unit-key\$=":assistant"\]::before\s*\{[\s\S]*?content:\s*"CODEX >"/i);
+assert.match(css, /\[data-local-conversation-item-target-ids\]::before\s*\{[\s\S]*?content:\s*"SYSTEM"/i);
+assert.match(css, /\[data-local-conversation-item-target-ids\]:has\(button\[aria-expanded="false"\]\)\s*>\s*div\s*\{[\s\S]*?height:\s*auto\s*!important[\s\S]*?max-height:\s*none\s*!important[\s\S]*?overflow:\s*visible/i);
+assert.match(css, /\[data-local-conversation-item-target-ids\] button\[aria-expanded="false"\]\s*\{[\s\S]*?min-height:\s*20px[\s\S]*?height:\s*auto\s*!important[\s\S]*?align-items:\s*center/i);
+assert.doesNotMatch(css, /span\.text-token-conversation-body:not\(button span\)::before\s*\{[\s\S]*?content:\s*"\* /i);
+assert.doesNotMatch(css, /\[data-local-conversation-item-target-ids\]:has\(button\[aria-expanded="false"\] img\)\s*>\s*div\s*\{[\s\S]*?display:\s*none/i);
+assert.match(css, /pre\.dream-cli-collapsible\[data-dream-cli-expanded="false"\][\s\S]*?max-height:\s*28px/i);
+assert.match(css, /\[data-dream-cli-kind="IMAGE"\]\[data-dream-cli-expanded="false"\][\s\S]*?height:\s*28px/i);
+assert.match(css, /\[data-dream-cli-expanded="true"\]\s*\{[\s\S]*?max-height:\s*none/i);
+assert.equal([...css.matchAll(/@keyframes\s+dream-tactical-scanlines-scroll/gi)].length, 1,
+  "The Tactical preset must define exactly one scanline animation.");
+assert.doesNotMatch(css, /@keyframes\s+(?!dream-tactical-scanlines-scroll\b)/i,
+  "No unrelated ambient animation should be introduced.");
 
 assert.match(injectorSource, /loadManagedPresetCss/);
 assert.match(injectorSource, /assets["'],\s*["']presets/);
@@ -259,7 +303,9 @@ assert.ok(tacticalPayload.managedPresetCssBytes > 0);
 assert.equal(tacticalPayload.tokens.colors.accent, "#D7AD55");
 assert.equal(tacticalPayload.tokens.colors.phosphor, "#49B81F");
 assert.equal(tacticalPayload.tokens.strokes.focus, 2);
+assert.equal(tacticalPayload.tokens.strokes.projectTree, 2);
 assert.equal(tacticalPayload.tokens.effects.brandOpacity, 0.13);
+assert.equal(tacticalPayload.tokens.layout.titleHeight, 38);
 const gothicPayload = checkPayload(path.join(windowsRoot, "presets", "preset-gothic-void-crusade"));
 assert.equal(gothicPayload.managedPresetCssBytes, 0,
   "A preset without managed CSS must continue with the base theme only.");
@@ -281,9 +327,18 @@ try {
         lineSubtle: "oklch(1 2 3 4)",
         unknown: "#ffffff",
       },
-      strokes: { subtle: 0, default: 50, strong: 50.01 },
+      strokes: { subtle: 0, default: 50, strong: 50.01, projectTree: 3 },
       radii: { panel: 0, control: 16, tooLarge: 17 },
-      effects: { scanlineOpacity: 0, gridOpacity: 0.35, vignetteOpacity: 0.351, brandOpacity: 0.36 },
+      effects: {
+        scanlineOpacity: 0,
+        scanlineWidth: 12,
+        scanlineDepth: 0.6,
+        scanlineSpeed: 120,
+        gridOpacity: 0.35,
+        vignetteOpacity: 0.351,
+        brandOpacity: 0.36,
+      },
+      layout: { titleHeight: 23 },
       unknown: { injected: "#ffffff" },
     },
   }));
@@ -292,9 +347,16 @@ try {
   assert.equal(sanitized.managedPresetCssBytes, 0);
   assert.deepEqual(sanitized.tokens, {
     colors: { canvas: "#010203", phosphor: "#00ff66" },
-    strokes: { subtle: 0, default: 50 },
+    strokes: { subtle: 0, default: 50, projectTree: 3 },
     radii: { panel: 0, control: 16 },
-    effects: { scanlineOpacity: 0, gridOpacity: 0.35 },
+    effects: {
+      scanlineOpacity: 0,
+      scanlineWidth: 12,
+      scanlineDepth: 0.6,
+      scanlineSpeed: 120,
+      gridOpacity: 0.35,
+    },
+    layout: {},
   });
 } finally {
   await fs.rm(invalidFixture, { recursive: true, force: true });
