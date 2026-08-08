@@ -33,6 +33,8 @@ function createFixture({
   homePresent = false,
   utilityPresent = false,
   summaryPanelPresent = false,
+  detailPopoverFixture = false,
+  nativeDetailFixture = false,
   shellAppearance = "dark",
   computedColorScheme = "",
   osAppearance = "light",
@@ -112,6 +114,15 @@ function createFixture({
         if (child.id) nodes.set(child.id, child);
         return child;
       },
+      prepend(child) {
+        if (child.parentElement) {
+          const oldIndex = child.parentElement.children?.indexOf(child) ?? -1;
+          if (oldIndex >= 0) child.parentElement.children.splice(oldIndex, 1);
+        }
+        child.parentElement = node;
+        node.children.unshift(child);
+        return child;
+      },
       replaceChildren(...children) {
         for (const child of node.children) child.parentElement = null;
         node.children = [];
@@ -161,6 +172,10 @@ function createFixture({
       querySelector(selector) {
         if (selector === ":scope > section") {
           return node.children.find((child) => child.tagName === "SECTION") || null;
+        }
+        if (selector === '.dream-tactical-right-module[data-dream-tactical-module="undecide"] .dream-tactical-right-body') {
+          return node.children.find((child) => child.dataset?.dreamTacticalModule === "undecide")
+            ?.children.find((child) => child.classList?.contains("dream-tactical-right-body")) || null;
         }
         if (selector === "button img") {
           return node.querySelectorAll("img")
@@ -221,6 +236,50 @@ function createFixture({
   shellMain.getBoundingClientRect = () => ({
     left: 290, top: 36, right: 1280, bottom: 820, width: 990, height: 784,
   });
+  let nativeDetail = null;
+  if (nativeDetailFixture) {
+    const host = makeFixtureNode("div");
+    const panel = makeFixtureNode("aside");
+    const tabs = makeFixtureNode("div");
+    const toolbar = makeFixtureNode("div");
+    const tabList = makeFixtureNode("div");
+    const controller = makeFixtureNode("div");
+    const nativeTab = makeFixtureNode("button");
+    const tabPanel = makeFixtureNode("div");
+    panel.setAttribute("data-app-shell-focus-area", "right-panel");
+    tabs.setAttribute("data-app-shell-tabs", "true");
+    tabList.setAttribute("role", "tablist");
+    controller.setAttribute("data-app-shell-tab-controller", "right");
+    controller.setAttribute("data-tab-id", "diff");
+    nativeTab.setAttribute("role", "tab");
+    nativeTab.setAttribute("aria-selected", "true");
+    nativeTab.textContent = "Review";
+    tabPanel.setAttribute("role", "tabpanel");
+    tabPanel.setAttribute("data-app-shell-tab-panel-controller", "right");
+    tabPanel.setAttribute("data-tab-id", "diff");
+    host.getBoundingClientRect = () => ({
+      left: 290, top: 36, right: 1280, bottom: 820, width: 990, height: 784,
+    });
+    panel.getBoundingClientRect = host.getBoundingClientRect;
+    controller.appendChild(nativeTab);
+    tabList.appendChild(controller);
+    toolbar.appendChild(tabList);
+    tabs.appendChild(toolbar);
+    tabs.appendChild(tabPanel);
+    panel.appendChild(tabs);
+    host.appendChild(panel);
+    shellMain.appendChild(host);
+    nativeDetail = { host, panel, tabs, toolbar, tabList, controller, nativeTab, tabPanel };
+  }
+  let detailPopover = null;
+  if (detailPopoverFixture) {
+    detailPopover = makeFixtureNode("div");
+    detailPopover.setAttribute("data-pip-obstacle", "thread-summary-panel");
+    detailPopover.getBoundingClientRect = () => ({
+      left: 760, top: 110, right: 1076, bottom: 516, width: 316, height: 406,
+    });
+    body.appendChild(detailPopover);
+  }
   let topBar = null;
   if (topBarFixture) {
     topBar = makeFixtureNode("div", ["group/application-menu-top-bar"]);
@@ -403,6 +462,9 @@ function createFixture({
       if (selector === "main.main-surface") return hasMain ? shellMain : null;
       if (selector === "main") return hasMain ? shellMain : null;
       if (selector === '[class~="group/application-menu-top-bar"]') return topBar;
+      if (selector === 'aside[data-app-shell-focus-area="right-panel"]') {
+        return nativeDetail?.panel || null;
+      }
       if (selector === "aside.app-shell-left-panel") {
         return hasSidebar ? (sidebar?.aside || {}) : null;
       }
@@ -423,6 +485,10 @@ function createFixture({
       return null;
     },
     querySelectorAll(selector) {
+      if (selector.includes(",")) {
+        return [...new Set(selector.split(",").flatMap((part) =>
+          document.querySelectorAll(part.trim())))];
+      }
       if (selector === '[role="main"]') return hasMain ? [routeMain] : [];
       if (selector === ".dream-task") return routeClasses.has("dream-task") ? [routeMain] : [];
       if (selector === ".dream-home-utility") {
@@ -433,6 +499,9 @@ function createFixture({
       }
       if (selector === ".dream-summary-panel") {
         return summaryPanelClasses.has("dream-summary-panel") ? [summaryPanel] : [];
+      }
+      if (selector === '[data-pip-obstacle="thread-summary-panel"]') {
+        return detailPopover ? [detailPopover] : [];
       }
       const exactClass = /^\.([\w/-]+)$/.exec(selector)?.[1];
       if (exactClass) {
@@ -446,6 +515,8 @@ function createFixture({
   };
   const context = {
     window: {
+      innerWidth: 1280,
+      innerHeight: 820,
       matchMedia() { return { matches: osAppearance === "dark" }; },
       addEventListener(type, listener) {
         if (!windowListeners.has(type)) windowListeners.set(type, new Set());
@@ -495,7 +566,14 @@ function createFixture({
     clearInterval: () => {},
     setTimeout: () => 2,
     clearTimeout: () => {},
-    getComputedStyle() { return { colorScheme: computedColorScheme }; },
+    getComputedStyle(node) {
+      return {
+        colorScheme: computedColorScheme,
+        visibility: "visible",
+        display: "block",
+        opacity: node?.computedOpacity || "1",
+      };
+    },
     Date: class extends Date {
       static now() { return fixtureNow; }
     },
@@ -533,6 +611,8 @@ function createFixture({
     topBar,
     sidebar,
     composer,
+    detailPopover,
+    nativeDetail,
     storage,
     get fetchCount() { return fetchCount; },
     advanceTime(milliseconds) { fixtureNow += milliseconds; },
@@ -611,6 +691,15 @@ const modeOptions = sidebarModules.sidebar.headButton.children.filter((node) =>
   node.classList.contains("dream-tactical-mode-option"));
 assert.deepEqual(modeOptions.map((node) => node.textContent), ["WORK", "CODEX"]);
 assert.deepEqual(modeOptions.map((node) => node.dataset.dreamTacticalModeTarget), ["work", "codex"]);
+let outsidePrevented = false;
+let outsideStopped = false;
+sidebarModules.context.window.dispatch("click", {
+  target: sidebarModules.sidebar.actionButton,
+  preventDefault() { outsidePrevented = true; },
+  stopImmediatePropagation() { outsideStopped = true; },
+});
+assert.equal(outsidePrevented || outsideStopped, false,
+  "The Tactical mode handler must not intercept clicks outside its native row.");
 let modeRowPrevented = false;
 let modeRowStopped = false;
 sidebarModules.context.window.dispatch("click", {
@@ -715,15 +804,32 @@ const paletteButtons = paletteFooter.querySelectorAll(".dream-footer-theme-butto
 const paletteButton = (name) => paletteButtons.find((button) =>
   button.getAttribute("data-dream-tactical-palette") === name,
 );
+const effectButton = (effect, enabled) => paletteFooter
+  .querySelectorAll(".dream-footer-effect-button")
+  .find((button) => button.getAttribute("data-dream-tactical-effect") === effect &&
+    button.getAttribute("data-dream-tactical-enabled") === `${enabled}`);
 assert.equal(paletteButtons.length, 4, "The Tactical footer must expose four palette buttons.");
 assert.equal(paletteFooter.getAttribute("aria-hidden"), null);
 assert.equal(paletteButton("amber").getAttribute("aria-pressed"), "true");
-assert.equal(paletteButton("amber").textContent, "[01 AMBER]");
+assert.equal(paletteButton("amber").textContent, "");
+assert.equal(paletteButton("amber").getAttribute("aria-label"), "Switch to AMBER theme");
+assert.equal(effectButton("scanline", true).getAttribute("aria-pressed"), "true");
+assert.equal(effectButton("gloom", true).getAttribute("aria-pressed"), "true");
+assert.equal(effectButton("scanline", true).textContent, "[ON]");
+assert.equal(effectButton("scanline", false).textContent, "OFF");
 paletteButton("cobalt").dispatch("click");
 assert.equal(tacticalPalette.rootStyles.get("--dream-token-color-accent"), "#4a94ff");
 assert.equal(tacticalPalette.rootStyles.get("--dream-token-color-line-strong"), "rgb(55 145 255 / 0.94)");
 assert.equal(tacticalPalette.storage.get("codex-dream-skin.tactical-palette"), "cobalt");
 assert.equal(paletteButton("cobalt").getAttribute("aria-pressed"), "true");
+effectButton("scanline", false).dispatch("click");
+effectButton("gloom", false).dispatch("click");
+assert.equal(effectButton("scanline", true).textContent, "ON");
+assert.equal(effectButton("scanline", false).textContent, "[OFF]");
+assert.equal(tacticalPalette.rootClasses.has("dream-scanline-off"), true);
+assert.equal(tacticalPalette.rootClasses.has("dream-gloom-off"), true);
+assert.equal(tacticalPalette.storage.get("codex-dream-skin.tactical-scanline"), "off");
+assert.equal(tacticalPalette.storage.get("codex-dream-skin.tactical-gloom"), "off");
 tacticalPalette.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
 assert.equal(tacticalPalette.rootStyles.get("--dream-token-color-accent"), "#4a94ff",
   "The selected palette must survive routine skin refreshes.");
@@ -732,6 +838,8 @@ assert.equal(tacticalPalette.nodes.get("codex-dream-skin-footer")
   .querySelectorAll(".dream-footer-theme-button")
   .find((button) => button.getAttribute("data-dream-tactical-palette") === "cobalt")
   .getAttribute("aria-pressed"), "true", "The selected palette must survive reinjection.");
+assert.equal(tacticalPalette.rootClasses.has("dream-scanline-off"), true);
+assert.equal(tacticalPalette.rootClasses.has("dream-gloom-off"), true);
 assert.equal(tacticalPalette.context.window.__CODEX_DREAM_SKIN_STATE__.cleanup(), true);
 
 const mainLayout = createFixture({
@@ -830,6 +938,80 @@ assert.equal(tacticalRightRail.nodes.get("codex-dream-skin-right-rail"), rightRa
   "Repeated ensure passes must preserve the right rail.");
 assert.equal(tacticalRightRail.context.window.__CODEX_DREAM_SKIN_STATE__.cleanup(), true);
 assert.equal(tacticalRightRail.nodes.has("codex-dream-skin-right-rail"), false);
+
+const tacticalNativeTabs = createFixture({ shellPresent: true, nativeDetailFixture: true });
+vm.runInNewContext(buildPayload({ id: "preset-codex-tactical-crt" }), tacticalNativeTabs.context);
+const conversationTab = tacticalNativeTabs.nativeDetail.tabList
+  .querySelector(".dream-tactical-conversation-tab");
+assert.ok(conversationTab, "An open native file panel must retain a Conversation tab.");
+assert.equal(tacticalNativeTabs.nativeDetail.tabList.children[0], conversationTab);
+tacticalNativeTabs.context.window.dispatch("click", {
+  target: conversationTab,
+  preventDefault() {},
+  stopImmediatePropagation() {},
+});
+assert.equal(tacticalNativeTabs.nativeDetail.panel.classList
+  .contains("dream-tactical-native-conversation-active"), true);
+assert.equal(conversationTab.getAttribute("aria-selected"), "true");
+assert.equal(tacticalNativeTabs.nativeDetail.nativeTab.getAttribute("aria-selected"), "false");
+let nativeTabClickStopped = false;
+tacticalNativeTabs.context.window.dispatch("click", {
+  target: tacticalNativeTabs.nativeDetail.nativeTab,
+  preventDefault() {},
+  stopImmediatePropagation() { nativeTabClickStopped = true; },
+});
+assert.equal(nativeTabClickStopped, true,
+  "Returning to Review must not let its native toggle close the retained panel.");
+assert.equal(tacticalNativeTabs.nativeDetail.panel.classList
+  .contains("dream-tactical-native-conversation-active"), false);
+assert.equal(conversationTab.getAttribute("aria-selected"), "false");
+assert.equal(tacticalNativeTabs.nativeDetail.nativeTab.getAttribute("aria-selected"), "true");
+tacticalNativeTabs.nativeDetail.nativeTab.setAttribute("aria-selected", "false");
+tacticalNativeTabs.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
+assert.equal(tacticalNativeTabs.nativeDetail.nativeTab.getAttribute("aria-selected"), "true",
+  "The visible retained native panel must repair React's delayed tab deselection.");
+assert.equal(tacticalNativeTabs.context.window.__CODEX_DREAM_SKIN_STATE__.cleanup(), true);
+assert.equal(tacticalNativeTabs.nativeDetail.tabList
+  .querySelector(".dream-tactical-conversation-tab"), null);
+
+const tacticalDetailPopover = createFixture({ shellPresent: true, detailPopoverFixture: true });
+vm.runInNewContext(buildPayload({ id: "preset-codex-tactical-crt" }), tacticalDetailPopover.context);
+const detailRail = tacticalDetailPopover.nodes.get("codex-dream-skin-right-rail");
+const detailBody = detailRail.children
+  .find((module) => module.dataset.dreamTacticalModule === "undecide").children[1];
+detailBody.getBoundingClientRect = () => ({
+  left: 1000, top: 100, right: 1280, bottom: 350, width: 280, height: 250,
+});
+tacticalDetailPopover.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
+assert.equal(tacticalDetailPopover.context.document
+  .querySelectorAll('[data-pip-obstacle="thread-summary-panel"]').length, 1);
+assert.equal(tacticalDetailPopover.rootStyles.get("--dream-token-runtime-detail-popover-left"), "1008px");
+assert.equal(tacticalDetailPopover.detailPopover.classList
+  .contains("dream-tactical-detail-popover-source"), true,
+"The native Codex summary panel must move into DETAIL instead of covering MAINTASK.");
+assert.equal(tacticalDetailPopover.rootStyles.get("--dream-token-runtime-detail-popover-top"), "108px");
+assert.equal(tacticalDetailPopover.rootStyles.get("--dream-token-runtime-detail-popover-width"), "264px");
+assert.equal(tacticalDetailPopover.rootStyles.get("--dream-token-runtime-detail-popover-height"), "234px");
+assert.equal(detailBody.dataset.dreamTacticalDetailKey, "native-popover");
+assert.equal(tacticalDetailPopover.rootClasses.has("dream-tactical-summary-relocated"), true);
+tacticalDetailPopover.detailPopover.computedOpacity = "0";
+tacticalDetailPopover.detailPopover.classList.remove("dream-tactical-detail-popover-source");
+tacticalDetailPopover.rootClasses.delete("dream-tactical-summary-relocated");
+const tacticalRootObserver = tacticalDetailPopover.observers.find((observer) =>
+  observer.target === tacticalDetailPopover.context.document.documentElement);
+tacticalRootObserver.callback([{
+  type: "childList",
+  addedNodes: [tacticalDetailPopover.detailPopover],
+  removedNodes: [],
+}]);
+assert.equal(tacticalDetailPopover.detailPopover.classList
+  .contains("dream-tactical-detail-popover-source"), true,
+"A newly mounted transparent Summary panel must relocate before its entrance animation is visible.");
+assert.equal(tacticalDetailPopover.rootClasses.has("dream-tactical-summary-relocated"), true);
+assert.equal(tacticalDetailPopover.context.window.__CODEX_DREAM_SKIN_STATE__.cleanup(), true);
+assert.equal(tacticalDetailPopover.detailPopover.classList
+  .contains("dream-tactical-detail-popover-source"), false);
+assert.equal(tacticalDetailPopover.rootClasses.has("dream-tactical-summary-relocated"), false);
 
 const nonTacticalRightRail = createFixture({ shellPresent: true });
 vm.runInNewContext(buildPayload({ id: "custom" }), nonTacticalRightRail.context);

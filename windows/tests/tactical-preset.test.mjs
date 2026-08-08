@@ -55,7 +55,7 @@ assert.deepEqual(theme.tokens.effects, {
 });
 assert.deepEqual(theme.tokens.layout, {
   titleHeight: 38,
-  headerHeight: 50.4,
+  headerHeight: 55,
   navigationRowHeight: 36,
   navigationFontSize: 22,
 });
@@ -186,17 +186,39 @@ assert.match(css, /--dream-token-effect-scanline-depth:\s*var\(--dream-token-eff
 assert.match(css, /--dream-token-effect-scanline-speed:\s*1\.8s/i);
 assert.match(css, /#codex-dream-skin-chrome::before\s*\{[\s\S]*?opacity:\s*var\(--dream-token-effect-scanline-depth\)[\s\S]*?animation:\s*dream-tactical-scanlines-scroll\s+var\(--dream-token-effect-scanline-speed\)/i);
 assert.match(css, /@keyframes\s+dream-tactical-scanlines-scroll[\s\S]*?background-position:\s*0\s+calc\(var\(--dream-token-effect-scanline-width\)\s*\*\s*3\)/i);
-assert.match(css, /#codex-dream-skin-chrome\s*\{[\s\S]*?opacity:\s*var\(--dream-token-effect-bloom-opacity\)[\s\S]*?backdrop-filter:\s*blur\(5px\) brightness\(1\.28\) saturate\(1\.2\)/i);
+assert.match(css, /\.dream-tactical-bloom\s*\{[\s\S]*?opacity:\s*var\(--dream-token-effect-bloom-opacity\)[\s\S]*?backdrop-filter:\s*blur\(5px\) brightness\(1\.28\) saturate\(1\.2\)/i);
+assert.match(css, /dream-scanline-off[\s\S]*?#codex-dream-skin-chrome::before\s*\{[\s\S]*?opacity:\s*var\(--dream-token-effect-hidden-opacity\)[\s\S]*?animation:\s*none/i);
+assert.match(css, /dream-gloom-off[\s\S]*?\.dream-tactical-bloom\s*\{[\s\S]*?opacity:\s*var\(--dream-token-effect-hidden-opacity\)/i);
 assert.match(css, /#codex-dream-skin-brand-mark\s*\{[\s\S]*?display:\s*none/i);
 assert.match(css, /#codex-dream-skin-footer\s*\{[\s\S]*?position:\s*fixed/i);
 assert.match(css, /\.dream-footer-online\s*\{[\s\S]*?--dream-token-color-positive/i);
 assert.match(css, /\.dream-footer-clock\s*\{[\s\S]*?right:/i);
 assert.match(css, /\.dream-footer-theme\s*\{[\s\S]*?pointer-events:\s*auto/i);
+assert.match(css, /\.dream-footer-theme-button\s*\{[\s\S]*?width:\s*16px[\s\S]*?height:\s*16px/i);
 assert.match(css, /\.dream-footer-theme-button\[aria-pressed="true"\]\s*\{[\s\S]*?--dream-token-color-accent/i);
+assert.match(css, /\.dream-footer-effect-button\[aria-pressed="true"\]\s*\{[\s\S]*?--dream-token-color-accent/i);
 assert.match(css, /\.dream-tactical-footer-extra-control\s*\{[\s\S]*?display:\s*none/i);
 assert.match(css, /#codex-dream-skin-right-rail\s*\{[\s\S]*?display:\s*none/i);
 assert.match(css, /@media \(min-width:\s*1180px\)[\s\S]*?#codex-dream-skin-right-rail\s*\{[\s\S]*?display:\s*grid/i);
 assert.match(css, /\.dream-tactical-right-body\s*\{[\s\S]*?background:\s*var\(--dream-token-color-canvas\)/i);
+assert.match(css, /dream-tactical-right-module:has\(> \.dream-tactical-right-body\[data-dream-tactical-detail-key="native-popover"\]\)[\s\S]*?background:\s*var\(--dream-token-color-transparent\)/i);
+assert.match(css, /dream-tactical-summary-relocated[\s\S]*?--thread-wide-block-inline-shift[\s\S]*?transform:\s*none\s*!important/i);
+assert.match(css, /\*::before,[\s\S]*?\*::after\s*\{[\s\S]*?border-radius:\s*var\(--dream-token-radius-control\)\s*!important/i,
+  "Tactical CRT must remove radii from native and injected UI shapes.");
+assert.match(css, /dream-tactical-native-detail-source[\s\S]*?data-app-shell-tab-strip-controller="right"[\s\S]*?display:\s*flex\s*!important/i);
+assert.match(css, /dream-tactical-native-detail-source[\s\S]*?::before\s*\{[\s\S]*?content:\s*var\(--dream-token-label-main\)/i);
+assert.match(css, /\.dream-tactical-conversation-tab\s*\{[\s\S]*?flex:\s*0\s+0\s+132px/i);
+assert.match(css, /dream-tactical-native-conversation-active\s*\{[\s\S]*?background:\s*var\(--dream-token-color-transparent\)\s*!important/i);
+assert.match(css, /dream-tactical-native-conversation-active[\s\S]*?data-app-shell-tab-panel-controller="right"[\s\S]*?visibility:\s*hidden\s*!important/i);
+assert.match(rendererSource, /syncTacticalNativeConversationTab[\s\S]*?CONVERSATION/i);
+assert.match(css, /dream-tactical-detail-popover-source\[data-pip-obstacle="thread-summary-panel"\]\s*\{[\s\S]*?height:\s*var\(--dream-token-runtime-detail-popover-height\)/i);
+const tacticalPopoverSource = rendererSource.match(
+  /const tacticalPopoverForDetail[\s\S]*?const syncTacticalDetailPopover/,
+)?.[0] || "";
+assert.match(tacticalPopoverSource, /querySelectorAll\('\[data-pip-obstacle="thread-summary-panel"\]'\)[\s\S]*?return summary \|\| null/i);
+assert.doesNotMatch(tacticalPopoverSource, /data-radix-popper|role="(?:menu|listbox|dialog)"/i,
+  "DETAIL must not capture user-triggered menus and dialogs.");
+assert.match(rendererSource, /summaryChanged[\s\S]*?addedNodes[\s\S]*?removedNodes[\s\S]*?ensure\(\)/i);
 assert.match(css, /\.dream-codeburn-monitor\s*\{[\s\S]*?display:\s*grid/i);
 assert.match(css, /\.dream-codeburn-table\s+\.dream-codeburn-header\s*\{[\s\S]*?background:\s*var\(--dream-token-color-accent\)/i);
 assert.match(css, /\.dream-codeburn-spend\s*\{[\s\S]*?linear-gradient\(to right[\s\S]*?linear-gradient\(to bottom[\s\S]*?background-size:\s*10px\s+10px/i);
@@ -338,7 +360,7 @@ assert.equal(tacticalPayload.tokens.strokes.focus, 2);
 assert.equal(tacticalPayload.tokens.strokes.projectTree, 2);
 assert.equal(tacticalPayload.tokens.effects.brandOpacity, 0.13);
 assert.equal(tacticalPayload.tokens.layout.titleHeight, 38);
-assert.equal(tacticalPayload.tokens.layout.headerHeight, 50.4);
+assert.equal(tacticalPayload.tokens.layout.headerHeight, 55);
 assert.equal(tacticalPayload.tokens.layout.navigationRowHeight, 36);
 assert.equal(tacticalPayload.tokens.layout.navigationFontSize, 22);
 const gothicPayload = checkPayload(path.join(windowsRoot, "presets", "preset-gothic-void-crusade"));

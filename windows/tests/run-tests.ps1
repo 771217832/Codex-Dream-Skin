@@ -686,6 +686,18 @@ try {
     $tacticalTheme.Theme.tokens.effects.brandOpacity -ne 0.13) {
     throw 'Codex Tactical CRT did not preserve its appearance, art, and token contract.'
   }
+  Copy-Item -LiteralPath (Join-Path $Root 'presets\preset-codex-tactical-crt\theme.json') `
+    -Destination (Join-Path $themePaths.Active 'theme.json') -Force
+  $missingBundledImage = Join-Path $themePaths.Active 'background.jpg'
+  if (Test-Path -LiteralPath $missingBundledImage) {
+    Remove-Item -LiteralPath $missingBundledImage -Force
+  }
+  $null = Initialize-DreamSkinThemeStore -SkillRoot $Root -StateRoot $themeStateRoot
+  $repairedTacticalTheme = Read-DreamSkinTheme -ThemeDirectory $themePaths.Active
+  if ($repairedTacticalTheme.Theme.id -cne 'preset-codex-tactical-crt' -or
+    -not (Test-Path -LiteralPath $missingBundledImage -PathType Leaf)) {
+    throw 'Theme-store initialization did not repair a missing bundled active-theme image.'
+  }
   $updatedTheme = Set-DreamSkinActiveTheme -ImagePath (Join-Path $Root 'assets\dream-reference.jpg') `
     -Theme $null -Name '测试主题' -StateRoot $themeStateRoot
   if ($updatedTheme.Theme.name -cne '测试主题' -or

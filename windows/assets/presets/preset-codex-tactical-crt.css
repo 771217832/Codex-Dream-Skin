@@ -11,6 +11,10 @@
   --dream-token-color-text-primary: #e6d7b0;
   --dream-token-color-text-secondary: #b8a477;
   --dream-token-color-accent: #d7ad55;
+  --dream-token-color-palette-amber: #d7ad55;
+  --dream-token-color-palette-cobalt: #4a94ff;
+  --dream-token-color-palette-phosphor: #9bd06e;
+  --dream-token-color-palette-titanium: #d5e1e8;
   --dream-token-color-accent-hot: color-mix(in srgb, var(--dream-token-color-accent) 78%, var(--dream-token-color-text-primary));
   --dream-token-color-phosphor: #49b81f;
   --dream-token-color-positive: #48cb22;
@@ -736,7 +740,7 @@
   overflow: visible !important;
   padding-inline: 10px !important;
   color: var(--dream-token-color-accent) !important;
-  background: var(--dream-token-color-transparent) !important;
+  background: var(--dream-token-color-canvas) !important;
   border-bottom: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong) !important;
   text-shadow: var(--dream-token-shadow-none);
 }
@@ -892,7 +896,9 @@
   right: var(--dream-token-layout-active-shell-gap);
   bottom: var(--dream-token-layout-active-shell-gap);
   height: var(--dream-token-layout-footer-height);
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
   background: var(--dream-token-color-canvas);
   border: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong);
@@ -938,7 +944,7 @@
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme {
-  gap: 18px;
+  gap: 7px;
   pointer-events: auto;
 }
 
@@ -948,7 +954,60 @@
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button {
   appearance: none;
-  padding: 2px 5px;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: var(--dream-token-footer-swatch);
+  border: var(--dream-token-stroke-default) solid var(--dream-token-color-transparent);
+  border-radius: var(--dream-token-radius-control);
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button[data-dream-tactical-palette="amber"] {
+  --dream-token-footer-swatch: var(--dream-token-color-palette-amber);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button[data-dream-tactical-palette="cobalt"] {
+  --dream-token-footer-swatch: var(--dream-token-color-palette-cobalt);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button[data-dream-tactical-palette="phosphor"] {
+  --dream-token-footer-swatch: var(--dream-token-color-palette-phosphor);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button[data-dream-tactical-palette="titanium"] {
+  --dream-token-footer-swatch: var(--dream-token-color-palette-titanium);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button[aria-pressed="true"] {
+  border-color: var(--dream-token-color-accent);
+  box-shadow: 0 0 0 var(--dream-token-stroke-default) var(--dream-token-color-text-primary);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button:hover,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button:focus-visible {
+  border-color: var(--dream-token-color-accent-hot);
+  outline: var(--dream-token-stroke-focus) solid var(--dream-token-color-text-primary);
+  outline-offset: var(--dream-token-stroke-subtle);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-effect {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 22px;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-effect-label {
+  color: var(--dream-token-color-text-secondary);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-effect-button {
+  appearance: none;
+  padding: 2px 1px;
   color: var(--dream-token-color-text-secondary);
   background: var(--dream-token-color-transparent);
   border: var(--dream-token-stroke-default) solid var(--dream-token-color-transparent);
@@ -958,17 +1017,16 @@
   cursor: pointer;
 }
 
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button[aria-pressed="true"] {
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-effect-button[aria-pressed="true"] {
   color: var(--dream-token-color-accent);
-  border-color: var(--dream-token-color-accent);
   text-shadow: var(--dream-token-shadow-text);
 }
 
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button:hover,
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-theme-button:focus-visible {
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-effect-button:hover,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-effect-button:focus-visible {
   color: var(--dream-token-color-text-primary);
-  border-color: var(--dream-token-color-accent-hot);
-  outline: none;
+  outline: var(--dream-token-stroke-focus) solid var(--dream-token-color-accent);
+  outline-offset: var(--dream-token-stroke-subtle);
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-footer-clock {
@@ -1494,6 +1552,16 @@
   box-shadow: var(--dream-token-shadow-panel);
 }
 
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-right-module:has(> .dream-tactical-right-body[data-dream-tactical-detail-key="native-popover"]),
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-right-body[data-dream-tactical-detail-key="native-popover"] {
+  background: var(--dream-token-color-transparent);
+}
+
+:root.codex-dream-skin.dream-theme-dark.dream-tactical-summary-relocated[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [style*="--thread-wide-block-inline-shift"] {
+  --thread-wide-block-inline-shift: 0px !important;
+  transform: none !important;
+}
+
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-no-signal {
   position: absolute;
   inset: 0;
@@ -1768,11 +1836,123 @@
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source [data-app-shell-tabs] > :has(> [data-app-shell-tab-strip-controller="right"]) {
-  display: none !important;
+  box-sizing: border-box;
+  position: relative;
+  display: flex !important;
+  padding-left: var(--dream-token-layout-main-label-width) !important;
+  color: var(--dream-token-color-text-primary) !important;
+  background: var(--dream-token-color-canvas) !important;
+  border-bottom: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong) !important;
 }
 
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source [role="tabpanel"] nav[aria-label="File path"] {
-  display: none !important;
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source [data-app-shell-tabs] > :has(> [data-app-shell-tab-strip-controller="right"])::before {
+  content: var(--dream-token-label-main);
+  box-sizing: border-box;
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--dream-token-layout-main-label-width);
+  display: flex;
+  align-items: center;
+  padding-left: 50px;
+  color: var(--dream-token-color-accent);
+  border-right: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong);
+  font: 700 24px/1 var(--dream-token-font-chrome);
+  letter-spacing: .06em;
+  pointer-events: none;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source [data-app-shell-tabs] > :has(> [data-app-shell-tab-strip-controller="right"])::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: min(28px, calc(var(--dream-token-layout-title-height) - 8px));
+  height: min(28px, calc(var(--dream-token-layout-title-height) - 8px));
+  transform: translateY(-50%);
+  background-color: var(--dream-token-color-accent);
+  -webkit-mask: var(--dream-token-module-icon-main, none) center / contain no-repeat;
+  mask: var(--dream-token-module-icon-main, none) center / contain no-repeat;
+  pointer-events: none;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source [role="tablist"]:has(> .dream-tactical-conversation-tab) {
+  width: auto !important;
+  max-width: none !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-conversation-tab {
+  box-sizing: border-box;
+  flex: 0 0 132px;
+  height: 28px;
+  padding-inline: 10px;
+  color: var(--dream-token-color-text-secondary);
+  background: var(--dream-token-color-transparent);
+  border: var(--dream-token-stroke-default) solid var(--dream-token-color-line-subtle);
+  font: 700 14px/1 var(--dream-token-font-chrome);
+  text-align: left;
+  cursor: pointer;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-conversation-tab[aria-selected="true"] {
+  color: var(--dream-token-color-accent);
+  background: var(--dream-token-color-surface-raised);
+  border-color: var(--dream-token-color-line-strong);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source.dream-tactical-native-conversation-active {
+  background: var(--dream-token-color-transparent) !important;
+  pointer-events: none !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source.dream-tactical-native-conversation-active > div.absolute.inset-0 > div.absolute,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source.dream-tactical-native-conversation-active [data-app-shell-tabs] {
+  background: var(--dream-token-color-transparent) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source.dream-tactical-native-conversation-active [data-app-shell-tabs] > :first-child {
+  pointer-events: auto !important;
+  background: var(--dream-token-color-canvas) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside[data-app-shell-focus-area="right-panel"].dream-tactical-native-detail-source.dream-tactical-native-conversation-active [data-app-shell-tab-panel-controller="right"] {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-popover-source {
+  box-sizing: border-box !important;
+  position: fixed !important;
+  z-index: 42 !important;
+  inset: auto !important;
+  top: var(--dream-token-runtime-detail-popover-top) !important;
+  left: var(--dream-token-runtime-detail-popover-left) !important;
+  width: var(--dream-token-runtime-detail-popover-width) !important;
+  min-width: 0 !important;
+  max-width: var(--dream-token-runtime-detail-popover-width) !important;
+  max-height: var(--dream-token-runtime-detail-popover-height) !important;
+  translate: none !important;
+  transform: none !important;
+  overflow: auto !important;
+  pointer-events: auto !important;
+  --radix-popper-available-width: var(--dream-token-runtime-detail-popover-width);
+  --radix-popper-available-height: var(--dream-token-runtime-detail-popover-height);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-popover-source[data-pip-obstacle="thread-summary-panel"] {
+  height: var(--dream-token-runtime-detail-popover-height) !important;
+  padding-right: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-popover-source[data-pip-obstacle="thread-summary-panel"] > div {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-tactical-detail-popover-source[data-pip-obstacle="thread-summary-panel"] .dream-summary-panel {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-height: 100% !important;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] [role="dialog"],
@@ -2320,10 +2500,17 @@
   display: block !important;
   overflow: hidden !important;
   pointer-events: none !important;
-  /* Blurred backdrop is intentionally translucent: sharp UI + bright blur copy = Bloom. */
+  opacity: var(--dream-token-effect-visible-opacity);
+  background: var(--dream-token-color-transparent);
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] #codex-dream-skin-chrome .dream-tactical-bloom {
+  position: absolute;
+  inset: 0;
   opacity: var(--dream-token-effect-bloom-opacity);
   backdrop-filter: blur(5px) brightness(1.28) saturate(1.2);
   background: var(--dream-token-background-vignette);
+  pointer-events: none;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-main-thread-scroll [data-message-author-role],
@@ -2345,6 +2532,16 @@
   background: var(--dream-token-background-scanlines);
   animation: dream-tactical-scanlines-scroll var(--dream-token-effect-scanline-speed) linear infinite;
   will-change: background-position;
+}
+
+:root.codex-dream-skin.dream-theme-dark.dream-scanline-off[data-dream-theme-id="preset-codex-tactical-crt"] #codex-dream-skin-chrome::before {
+  opacity: var(--dream-token-effect-hidden-opacity);
+  animation: none;
+}
+
+:root.codex-dream-skin.dream-theme-dark.dream-gloom-off[data-dream-theme-id="preset-codex-tactical-crt"] #codex-dream-skin-chrome .dream-tactical-bloom {
+  opacity: var(--dream-token-effect-hidden-opacity);
+  backdrop-filter: none;
 }
 
 @keyframes dream-tactical-scanlines-scroll {
@@ -2671,4 +2868,10 @@
     scroll-behavior: auto !important;
     transition-duration: var(--dream-token-motion-reduced) !important;
   }
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] *,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] *::before,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] *::after {
+  border-radius: var(--dream-token-radius-control) !important;
 }

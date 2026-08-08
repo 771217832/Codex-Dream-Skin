@@ -86,6 +86,9 @@
     "dream-task-off",
     "dream-sidebar-collapsed",
     "dream-tactical-mode-selecting",
+    "dream-scanline-off",
+    "dream-gloom-off",
+    "dream-tactical-summary-relocated",
   ];
   const ROOT_PROPERTIES = [
     "--dream-art",
@@ -110,6 +113,10 @@
     "--dream-token-runtime-undecide-top",
     "--dream-token-runtime-undecide-width",
     "--dream-token-runtime-undecide-height",
+    "--dream-token-runtime-detail-popover-left",
+    "--dream-token-runtime-detail-popover-top",
+    "--dream-token-runtime-detail-popover-width",
+    "--dream-token-runtime-detail-popover-height",
     ...TOKEN_PROPERTIES,
   ];
   const HOME_UTILITY_CLASS = "dream-home-utility";
@@ -122,8 +129,12 @@
   const TACTICAL_PROJECT_BOTTOM_FRAME_ID = "codex-dream-skin-project-bottom-frame";
   const TACTICAL_RIGHT_RAIL_ID = "codex-dream-skin-right-rail";
   const TACTICAL_RIGHT_RAIL_RESIZE_CLASS = "dream-tactical-right-resizer";
+  const TACTICAL_CONVERSATION_TAB_CLASS = "dream-tactical-conversation-tab";
+  const TACTICAL_CONVERSATION_ACTIVE_CLASS = "dream-tactical-native-conversation-active";
   const TACTICAL_RIGHT_RAIL_STORAGE_KEY = "codex-dream-skin.tactical-right-rail-width";
   const TACTICAL_PALETTE_STORAGE_KEY = "codex-dream-skin.tactical-palette";
+  const TACTICAL_SCANLINE_STORAGE_KEY = "codex-dream-skin.tactical-scanline";
+  const TACTICAL_GLOOM_STORAGE_KEY = "codex-dream-skin.tactical-gloom";
   const TACTICAL_PALETTES = {
     amber: null,
     cobalt: {
@@ -146,8 +157,8 @@
     },
   };
   const TACTICAL_PALETTE_OPTIONS = [
-    ["amber", "01 AMBER"], ["cobalt", "02 COBALT"],
-    ["phosphor", "03 PHOSPHOR"], ["titanium", "04 TITANIUM"],
+    ["amber", "AMBER"], ["cobalt", "COBALT"],
+    ["phosphor", "PHOSPHOR"], ["titanium", "TITANIUM"],
   ];
   const SIDEBAR_NATIVE_FOOTER_CLASS = "dream-sidebar-native-footer";
   const TACTICAL_TOP_BAR_CLASSES = [
@@ -198,6 +209,8 @@
   let navigationWheelHandler = null;
   let tacticalModeSwitchNode = null;
   let tacticalModeSwitchHandler = null;
+  let tacticalNativeTabsPanel = null;
+  let tacticalNativeTabsClickHandler = null;
   const cliCollapsibleBindings = new Map();
   let nativeBrandPath = null;
   let brandLoadPromise = null;
@@ -344,6 +357,15 @@
       return "amber";
     }
   })();
+  const savedEffectEnabled = (storageKey) => {
+    try {
+      return globalThis.localStorage?.getItem(storageKey) !== "off";
+    } catch {
+      return true;
+    }
+  };
+  let tacticalScanlineEnabled = savedEffectEnabled(TACTICAL_SCANLINE_STORAGE_KEY);
+  let tacticalGloomEnabled = savedEffectEnabled(TACTICAL_GLOOM_STORAGE_KEY);
   const applyTacticalPalette = (root) => {
     const palette = config.themeId === TACTICAL_THEME_ID ? TACTICAL_PALETTES[tacticalPalette] : null;
     if (!palette) return;
@@ -533,6 +555,7 @@
     const root = document.documentElement;
     clearCliCollapsibleBindings();
     clearTacticalModeSwitchBinding();
+    clearTacticalNativeTabsBinding();
     root?.classList.remove(...ROOT_CLASSES);
     root?.removeAttribute?.(THEME_ATTRIBUTE);
     for (const property of ROOT_PROPERTIES) root?.style.removeProperty(property);
@@ -541,6 +564,8 @@
     document.querySelectorAll(".dream-home-shell").forEach((node) => node.classList.remove("dream-home-shell"));
     document.querySelectorAll(`.${HOME_UTILITY_CLASS}`).forEach((node) => node.classList.remove(HOME_UTILITY_CLASS));
     document.querySelectorAll(`.${SUMMARY_PANEL_CLASS}`).forEach((node) => node.classList.remove(SUMMARY_PANEL_CLASS));
+    document.querySelectorAll(".dream-tactical-native-detail-source, .dream-tactical-detail-popover-source")
+      .forEach((node) => node.classList.remove("dream-tactical-native-detail-source", "dream-tactical-detail-popover-source"));
     document.querySelectorAll(".dream-tactical-navigation-item").forEach((node) => {
       delete node.dataset.dreamTacticalNavIndex;
       delete node.dataset.dreamTacticalNavLabel;
@@ -603,6 +628,21 @@
     window.removeEventListener?.("click", tacticalModeSwitchHandler, true);
     tacticalModeSwitchNode = null;
     tacticalModeSwitchHandler = null;
+  };
+
+  const clearTacticalNativeTabsBinding = () => {
+    window.removeEventListener?.("click", tacticalNativeTabsClickHandler, true);
+    tacticalNativeTabsPanel?.classList?.remove?.(TACTICAL_CONVERSATION_ACTIVE_CLASS);
+    tacticalNativeTabsPanel?.querySelectorAll?.(`.${TACTICAL_CONVERSATION_TAB_CLASS}`)
+      .forEach((node) => node.remove?.());
+    tacticalNativeTabsPanel?.querySelectorAll?.('[data-dream-tactical-native-selected]')
+      .forEach((node) => {
+        node.setAttribute("aria-selected", node.dataset.dreamTacticalNativeSelected);
+        delete node.dataset.dreamTacticalNativeSelected;
+      });
+    if (tacticalNativeTabsPanel?.dataset) delete tacticalNativeTabsPanel.dataset.dreamTacticalNativeTabSignature;
+    tacticalNativeTabsPanel = null;
+    tacticalNativeTabsClickHandler = null;
   };
 
   const clearModeSelectingWhenClosed = (attempts = 60) => {
@@ -676,6 +716,7 @@
     if (!node) return;
     tacticalModeSwitchNode = node;
     tacticalModeSwitchHandler = (event) => {
+      if (event.target?.closest?.(".dream-tactical-mode-switch") !== node) return;
       const option = event.target?.closest?.(`.${TACTICAL_MODE_OPTION_CLASS}`);
       const targetMode = option?.parentElement === node
         ? option.dataset.dreamTacticalModeTarget
@@ -911,7 +952,7 @@
     if (scrollbar.parentElement !== aside) aside.appendChild(scrollbar);
     scrollbar.removeAttribute?.("aria-hidden");
     scrollbar.setAttribute("role", "scrollbar");
-    scrollbar.setAttribute("aria-label", "02.PROJECTS");
+    scrollbar.setAttribute("aria-label", "EXECUTION PROJECTS");
     scrollbar.setAttribute("aria-orientation", "vertical");
 
     const tokenNumber = (property, fallback) => {
@@ -924,7 +965,8 @@
       if (!asideRect) return;
       const projectPanel = aside.querySelector?.(".dream-sidebar-projects");
       const projectRect = projectPanel?.getBoundingClientRect?.() || asideRect;
-      const titleHeight = tokenNumber("--dream-token-layout-project-title-height", 42);
+      const executionTitleHeight = tokenNumber("--dream-token-layout-execution-title-height", 42);
+      const projectTitleHeight = tokenNumber("--dream-token-layout-project-title-height", 30);
       const scrollbarInset = tokenNumber("--dream-token-layout-scrollbar-inset", 4);
       const frameStroke = tokenNumber("--dream-token-stroke-strong", 2);
       // Measure the actual Project module rather than reconstructing its position
@@ -932,7 +974,7 @@
       // coordinates drift while rows mount or unmount during a scroll.
       const trackTop = Math.max(
         frameStroke + scrollbarInset,
-        projectRect.top - asideRect.top + titleHeight + scrollbarInset,
+        projectRect.top - asideRect.top + executionTitleHeight + projectTitleHeight + scrollbarInset,
       );
       const trackBottom = Math.min(
         asideRect.height - frameStroke - scrollbarInset,
@@ -1076,9 +1118,46 @@
     for (const button of control?.querySelectorAll?.(".dream-footer-theme-button") || []) {
       const selected = button.getAttribute("data-dream-tactical-palette") === tacticalPalette;
       button.setAttribute("aria-pressed", `${selected}`);
-      button.textContent = selected ? `[${button.getAttribute("data-dream-tactical-palette-label")}]` :
-        button.getAttribute("data-dream-tactical-palette-label");
+      button.textContent = "";
     }
+    for (const button of control?.querySelectorAll?.(".dream-footer-effect-button") || []) {
+      const effect = button.getAttribute("data-dream-tactical-effect");
+      const enabled = effect === "scanline" ? tacticalScanlineEnabled : tacticalGloomEnabled;
+      const selected = button.getAttribute("data-dream-tactical-enabled") === `${enabled}`;
+      const label = button.getAttribute("data-dream-tactical-label") || "";
+      button.setAttribute("aria-pressed", `${selected}`);
+      button.textContent = selected ? `[${label}]` : label;
+    }
+  };
+
+  const createTacticalEffectControl = (effect, label) => {
+    const control = document.createElement("div");
+    const title = document.createElement("span");
+    control.classList.add("dream-footer-effect");
+    title.classList.add("dream-footer-effect-label");
+    title.textContent = `${label}//`;
+    control.appendChild(title);
+    for (const [enabled, text] of [[true, "ON"], [false, "OFF"]]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.classList.add("dream-footer-effect-button");
+      button.textContent = text;
+      button.setAttribute("data-dream-tactical-effect", effect);
+      button.setAttribute("data-dream-tactical-enabled", `${enabled}`);
+      button.setAttribute("data-dream-tactical-label", text);
+      button.setAttribute("aria-label", `Turn ${label.toLowerCase()} ${text.toLowerCase()}`);
+      button.addEventListener("click", () => {
+        if (effect === "scanline") tacticalScanlineEnabled = enabled;
+        else tacticalGloomEnabled = enabled;
+        const storageKey = effect === "scanline"
+          ? TACTICAL_SCANLINE_STORAGE_KEY
+          : TACTICAL_GLOOM_STORAGE_KEY;
+        try { globalThis.localStorage?.setItem(storageKey, enabled ? "on" : "off"); } catch {}
+        ensure();
+      });
+      control.appendChild(button);
+    }
+    return control;
   };
 
   const createTacticalPaletteControl = () => {
@@ -1086,7 +1165,7 @@
     const label = document.createElement("span");
     control.classList.add("dream-footer-center", "dream-footer-theme");
     label.classList.add("dream-footer-theme-label");
-    label.textContent = "THEME //";
+    label.textContent = "THEME";
     control.appendChild(label);
     for (const [name, text] of TACTICAL_PALETTE_OPTIONS) {
       const button = document.createElement("button");
@@ -1102,14 +1181,18 @@
       });
       control.appendChild(button);
     }
+    control.appendChild(createTacticalEffectControl("scanline", "SCANLINE"));
+    control.appendChild(createTacticalEffectControl("gloom", "GLOOM"));
     syncTacticalPaletteControls(control);
     return control;
   };
 
-  const syncTacticalFooter = (aside, nav, navigationHead, navigationBody, projects) => {
+  const syncTacticalFooter = (aside, nav, navigationHead, navigationBody, projects, tasks) => {
     const root = document.documentElement;
     const tactical = config.themeId === TACTICAL_THEME_ID;
     root.classList.toggle("dream-sidebar-collapsed", tactical && !aside);
+    root.classList.toggle("dream-scanline-off", tactical && !tacticalScanlineEnabled);
+    root.classList.toggle("dream-gloom-off", tactical && !tacticalGloomEnabled);
     const nativeFooter = nav?.parentElement
       ? [...nav.parentElement.children].find((node) =>
         node !== nav && node.querySelector?.("button img")) || null
@@ -1147,7 +1230,7 @@
     }
     footer.removeAttribute?.("aria-hidden");
     footer.setAttribute("role", "group");
-    footer.setAttribute("aria-label", "Tactical status and theme selection");
+    footer.setAttribute("aria-label", "Tactical theme and visual effects");
     let themeControl = footer.querySelector?.(".dream-footer-theme");
     if (!themeControl) {
       footer.querySelector?.(".dream-footer-center")?.remove?.();
@@ -1214,7 +1297,7 @@
     // it at its origin and bind scrolling exclusively to the Project module.
     if (tactical && nativeScroll && nativeScroll.scrollTop !== 0) nativeScroll.scrollTop = 0;
     syncTacticalScrollbar(aside, projects, navigationBody);
-    syncTacticalProjectBottomFrame(tactical ? projects : null);
+    syncTacticalProjectBottomFrame(tactical && !tasks ? projects : null);
   };
 
   const syncTacticalNavigationItems = (navigationBody, navigationHead) => {
@@ -1335,6 +1418,7 @@
       navigationHead,
       navigationBody,
       projects,
+      tasks,
     );
   };
 
@@ -1358,10 +1442,84 @@
     'aside[data-app-shell-focus-area="right-panel"]',
   ) || null;
 
-  const syncTacticalNativeDetailPosition = (panel, target) => {
+  const setTacticalNativeConversationActive = (panel, active) => {
+    const conversationTab = panel.querySelector?.(`.${TACTICAL_CONVERSATION_TAB_CLASS}`);
+    panel.classList.toggle(TACTICAL_CONVERSATION_ACTIVE_CLASS, active);
+    conversationTab?.setAttribute("aria-selected", `${active}`);
+    for (const tab of panel.querySelectorAll('[role="tab"]')) {
+      if (tab === conversationTab) continue;
+      if (active) {
+        tab.dataset.dreamTacticalNativeSelected = tab.getAttribute("aria-selected") || "false";
+        tab.setAttribute("aria-selected", "false");
+      } else if (tab.dataset.dreamTacticalNativeSelected) {
+        tab.setAttribute("aria-selected", tab.dataset.dreamTacticalNativeSelected);
+        delete tab.dataset.dreamTacticalNativeSelected;
+      }
+    }
+  };
+
+  const syncTacticalNativeConversationTab = (panel) => {
+    if (!panel) {
+      if (tacticalNativeTabsPanel) clearTacticalNativeTabsBinding();
+      return;
+    }
+    if (tacticalNativeTabsPanel !== panel) {
+      clearTacticalNativeTabsBinding();
+      tacticalNativeTabsPanel = panel;
+      tacticalNativeTabsClickHandler = (event) => {
+        let eventNode = event.target;
+        while (eventNode && eventNode !== panel) eventNode = eventNode.parentElement;
+        if (eventNode !== panel) return;
+        const conversationTab = event.target?.closest?.(`.${TACTICAL_CONVERSATION_TAB_CLASS}`);
+        const nativeTab = event.target?.closest?.('[role="tab"]');
+        const active = Boolean(conversationTab);
+        if (!active && !nativeTab) return;
+        if (active || panel.classList.contains(TACTICAL_CONVERSATION_ACTIVE_CLASS)) {
+          event.preventDefault?.();
+          event.stopImmediatePropagation?.();
+        }
+        setTacticalNativeConversationActive(panel, active);
+      };
+      window.addEventListener("click", tacticalNativeTabsClickHandler, true);
+    }
+    const tabList = panel.querySelector?.('[role="tablist"]');
+    if (!tabList) return;
+    let conversationTab = tabList.querySelector?.(`.${TACTICAL_CONVERSATION_TAB_CLASS}`);
+    if (!conversationTab) {
+      conversationTab = document.createElement("button");
+      conversationTab.type = "button";
+      conversationTab.classList.add(TACTICAL_CONVERSATION_TAB_CLASS);
+      conversationTab.setAttribute("role", "tab");
+      conversationTab.setAttribute("aria-selected", "false");
+      conversationTab.textContent = "CONVERSATION";
+      if (typeof tabList.prepend === "function") tabList.prepend(conversationTab);
+      else tabList.appendChild(conversationTab);
+    }
+    let selectedNative = [...panel.querySelectorAll('[role="tab"][aria-selected="true"]')]
+      .find((tab) => tab !== conversationTab);
+    if (!panel.classList.contains(TACTICAL_CONVERSATION_ACTIVE_CLASS) && !selectedNative) {
+      const tabPanelId = panel.querySelector?.('[data-app-shell-tab-panel-controller="right"]')
+        ?.getAttribute?.("data-tab-id");
+      selectedNative = [...panel.querySelectorAll('[role="tab"]')].find((tab) =>
+        tab !== conversationTab && tab.closest?.('[data-app-shell-tab-controller="right"]')
+          ?.getAttribute?.("data-tab-id") === tabPanelId);
+      selectedNative?.setAttribute("aria-selected", "true");
+    }
+    const selectedController = selectedNative?.closest?.('[data-app-shell-tab-controller="right"]');
+    const signature = selectedController?.getAttribute?.("data-tab-id") || selectedNative?.textContent || "";
+    const previousSignature = panel.dataset.dreamTacticalNativeTabSignature || "";
+    if (panel.classList.contains(TACTICAL_CONVERSATION_ACTIVE_CLASS) && signature &&
+        previousSignature && signature !== previousSignature) {
+      setTacticalNativeConversationActive(panel, false);
+    }
+    if (signature) panel.dataset.dreamTacticalNativeTabSignature = signature;
+  };
+
+  const syncTacticalNativeDetailPosition = (panel, target, heightTarget = target) => {
     const root = document.documentElement;
     const host = panel?.parentElement;
     const targetRect = target?.getBoundingClientRect?.();
+    const heightRect = heightTarget?.getBoundingClientRect?.();
     const hostRect = host?.getBoundingClientRect?.();
     const properties = [
       "--dream-token-runtime-undecide-left",
@@ -1369,7 +1527,7 @@
       "--dream-token-runtime-undecide-width",
       "--dream-token-runtime-undecide-height",
     ];
-    if (!hostRect || !targetRect || targetRect.width <= 0 || targetRect.height <= 0) {
+    if (!hostRect || !targetRect || !heightRect || targetRect.width <= 0 || heightRect.height <= 0) {
       properties.forEach((property) => root.style.removeProperty(property));
       return false;
     }
@@ -1377,7 +1535,7 @@
     root.style.setProperty(properties[0], pixel(targetRect.left - hostRect.left));
     root.style.setProperty(properties[1], pixel(targetRect.top - hostRect.top));
     root.style.setProperty(properties[2], pixel(targetRect.width));
-    root.style.setProperty(properties[3], pixel(targetRect.height));
+    root.style.setProperty(properties[3], pixel(Math.max(0, heightRect.bottom - targetRect.top)));
     return true;
   };
 
@@ -1428,62 +1586,55 @@
     }
   };
 
-  const tacticalDetailForRail = () => {
+  const tacticalPopoverForDetail = () => {
     const visible = (node) => {
-      const rect = node?.getBoundingClientRect?.();
-      return Boolean(rect && rect.width > 0 && rect.height > 0 && getComputedStyle(node).visibility !== "hidden");
+      if (node.closest?.(`#${TACTICAL_RIGHT_RAIL_ID}, aside[data-app-shell-focus-area="right-panel"]`)) return false;
+      const rect = node.getBoundingClientRect?.();
+      const style = getComputedStyle(node);
+      return Boolean(rect && rect.width > 0 && rect.height > 0 &&
+        rect.width <= Math.min(720, window.innerWidth * .65) && rect.height <= window.innerHeight * .8 &&
+        style.visibility !== "hidden" && style.display !== "none");
     };
-    const compact = (value, limit = 1200) => `${value || ""}`
-      .replace(/\s+$/g, "")
-      .replace(/^\s+/g, "")
-      .slice(0, limit);
-    const nativeFilePanel = nativeTacticalDetailPanel();
-    if (nativeFilePanel) {
-      const tab = nativeFilePanel.querySelector?.('[role="tab"], [role="button"]');
-      const panel = nativeFilePanel.querySelector?.('[role="tabpanel"]');
-      const title = compact(tab?.innerText || tab?.textContent, 120);
-      const value = compact(panel?.innerText || panel?.textContent);
-      if (title && value) {
-        return { kind: "FILE DETAIL", title: `FILE / ${title}`, value };
-      }
-    }
-    const codeNodes = [...document.querySelectorAll("pre, [data-language] code")]
-      .filter((node) =>
-        (node.tagName === "CODE" || node.querySelector?.("code") || node.closest?.("[data-language]")) &&
-        visible(node) && compact(node.innerText || node.textContent).length > 0,
-      );
-    const code = codeNodes.at(-1);
-    if (code) {
-      const language = compact(code.closest?.("[data-language]")?.getAttribute?.("data-language"), 40);
-      return {
-        kind: "CODE DETAIL",
-        title: language ? `CODE / ${language.toUpperCase()}` : "CODE DETAIL",
-        value: compact(code.innerText || code.textContent),
-      };
-    }
+    const summary = [...document.querySelectorAll('[data-pip-obstacle="thread-summary-panel"]')]
+      .filter(visible).at(-1);
+    return summary || null;
+  };
 
-    const fileNodes = [...document.querySelectorAll(
-      "[data-file-path], [data-path], [data-testid*='file' i], [aria-label*='file' i]",
-    )].filter((node) =>
-      !node.closest?.('[class~="group/application-menu-top-bar"]') &&
-      !node.closest?.("button") &&
-      visible(node) &&
-      compact(node.innerText || node.textContent || node.getAttribute?.("aria-label")).length > 0,
-    );
-    const fileDetail = fileNodes.map((file) => ({
-      file,
-      path: compact(
-        file.getAttribute?.("data-file-path") || file.getAttribute?.("data-path") ||
-        file.getAttribute?.("aria-label") || file.innerText || file.textContent,
-      ),
-    })).reverse().find(({ file, path }) =>
-      !/^(?:file|file path)$/i.test(path) &&
-      (file.hasAttribute?.("data-file-path") || file.hasAttribute?.("data-path") ||
-        /[\\/]|\.[a-z0-9]{1,16}(?:\s|$)/i.test(path)),
-    );
-    return fileDetail
-      ? { kind: "FILE DETAIL", title: "FILE DETAIL", value: fileDetail.path }
-      : null;
+  const syncTacticalDetailPopover = (body) => {
+    const root = document.documentElement;
+    const source = tacticalPopoverForDetail();
+    root.classList.toggle("dream-tactical-summary-relocated", Boolean(source));
+    const rect = body?.getBoundingClientRect?.();
+    document.querySelectorAll(".dream-tactical-detail-popover-source").forEach((node) => {
+      if (node !== source) node.classList.remove("dream-tactical-detail-popover-source");
+    });
+    const properties = [
+      "--dream-token-runtime-detail-popover-left",
+      "--dream-token-runtime-detail-popover-top",
+      "--dream-token-runtime-detail-popover-width",
+      "--dream-token-runtime-detail-popover-height",
+    ];
+    if (!source || !rect || rect.width <= 16 || rect.height <= 16) {
+      properties.forEach((property) => root.style.removeProperty(property));
+      if (body && body.dataset.dreamTacticalDetailKey !== "NO ACTIVE PANEL") {
+        const empty = document.createElement("div");
+        empty.classList.add("dream-tactical-no-signal");
+        empty.textContent = "NO ACTIVE PANEL";
+        body.dataset.dreamTacticalDetailKey = "NO ACTIVE PANEL";
+        body.replaceChildren(empty);
+      }
+      return;
+    }
+    const pixel = (value) => `${Math.round(value * 100) / 100}px`;
+    root.style.setProperty(properties[0], pixel(rect.left + 8));
+    root.style.setProperty(properties[1], pixel(rect.top + 8));
+    root.style.setProperty(properties[2], pixel(rect.width - 16));
+    root.style.setProperty(properties[3], pixel(rect.height - 16));
+    source.classList.add("dream-tactical-detail-popover-source");
+    if (body.dataset.dreamTacticalDetailKey !== "native-popover") {
+      body.dataset.dreamTacticalDetailKey = "native-popover";
+      body.replaceChildren();
+    }
   };
 
   const syncTacticalRightRail = (shellMain) => {
@@ -1628,34 +1779,19 @@
       .forEach((node) => {
         if (node !== nativePanel) node.classList.remove("dream-tactical-native-detail-source");
       });
-    if (nativePanel && undecideBody) {
+    if (nativePanel) {
       if (!nativePanel.classList.contains("dream-tactical-native-detail-source")) {
         nativePanel.classList.add("dream-tactical-native-detail-source");
       }
-      if (syncTacticalNativeDetailPosition(nativePanel, undecideBody) &&
-          undecideBody.dataset.dreamTacticalDetailKey !== "native-live") {
-        undecideBody.dataset.dreamTacticalDetailKey = "native-live";
-        undecideBody.replaceChildren();
-      }
-      return;
+      const mainHeader = shellMain.querySelector?.("header.app-header-tint") ||
+        document.querySelector?.("main.main-surface > header.app-header-tint");
+      syncTacticalNativeDetailPosition(nativePanel, mainHeader, shellMain);
+      syncTacticalNativeConversationTab(nativePanel);
+    } else {
+      syncTacticalNativeDetailPosition(null, null);
+      syncTacticalNativeConversationTab(null);
     }
-    const detail = tacticalDetailForRail();
-    const key = detail ? `${detail.kind}\n${detail.title}\n${detail.value}` : "NO SIGNAL";
-    if (undecideBody && undecideBody.dataset.dreamTacticalDetailKey !== key) {
-      undecideBody.dataset.dreamTacticalDetailKey = key;
-      undecideBody.replaceChildren();
-      if (!detail) {
-        const empty = document.createElement("div");
-        empty.classList.add("dream-tactical-no-signal");
-        empty.textContent = "NO SIGNAL";
-        undecideBody.appendChild(empty);
-      } else {
-        const content = document.createElement("pre");
-        content.classList.add("dream-tactical-detail-content");
-        content.textContent = detail.value;
-        undecideBody.appendChild(content);
-      }
-    }
+    syncTacticalDetailPopover(undecideBody);
   };
 
   const nativeBrandModuleHref = () => {
@@ -1837,6 +1973,14 @@
       document.body.appendChild(chrome);
     }
     chrome.classList.toggle("dream-home-shell", Boolean(home));
+    let bloom = chrome.querySelector?.(".dream-tactical-bloom");
+    if (config.themeId === TACTICAL_THEME_ID && !bloom) {
+      bloom = document.createElement("div");
+      bloom.classList.add("dream-tactical-bloom");
+      chrome.appendChild(bloom);
+    } else if (config.themeId !== TACTICAL_THEME_ID) {
+      bloom?.remove?.();
+    }
   };
 
   const cleanup = () => {
@@ -1865,15 +2009,26 @@
       ensure();
     }, 180);
   };
-  observer = new MutationObserver(() => {
+  observer = new MutationObserver((records) => {
     if (samplingNativeShell) return;
+    const summaryChanged = records.some((record) =>
+      [...(record.addedNodes || []), ...(record.removedNodes || [])].some((node) =>
+        node.matches?.('[data-pip-obstacle="thread-summary-panel"]') ||
+        node.querySelector?.('[data-pip-obstacle="thread-summary-panel"]'),
+      ));
+    if (summaryChanged) {
+      if (scheduler.timeout) clearTimeout(scheduler.timeout);
+      scheduler.timeout = null;
+      ensure();
+      return;
+    }
     scheduleEnsure();
   });
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode"],
+    attributeFilter: ["class", "data-theme", "data-appearance", "data-color-mode", "aria-selected"],
   });
   const timer = setInterval(ensure, 5000);
   window[STATE_KEY] = {

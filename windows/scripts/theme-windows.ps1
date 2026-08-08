@@ -278,7 +278,23 @@ function Initialize-DreamSkinThemeStore {
   )) {
     Install-DreamSkinBundledPreset -SkillRoot $SkillRoot -Paths $paths -PresetId $bundledPresetId
   }
-  $null = Read-DreamSkinTheme -ThemeDirectory $paths.Active
+  try {
+    $null = Read-DreamSkinTheme -ThemeDirectory $paths.Active
+  } catch {
+    $activeMetadata = $null
+    try {
+      $activeMetadata = (Read-DreamSkinUtf8File -Path $activeTheme) | ConvertFrom-Json -ErrorAction Stop
+    } catch {}
+    $activePresetId = "$($activeMetadata.id)"
+    if ($activePresetId -notin @('preset-gothic-void-crusade', 'preset-codex-tactical-crt')) { throw }
+    $bundled = Read-DreamSkinTheme -ThemeDirectory (Join-Path $SkillRoot (Join-Path 'presets' $activePresetId))
+    if ("$($activeMetadata.image)" -cne "$($bundled.Theme.image)") { throw }
+    $repairedImage = Join-Path $paths.Active "$($bundled.Theme.image)"
+    Assert-DreamSkinNoReparseComponents -Path $repairedImage
+    Copy-Item -LiteralPath $bundled.ImagePath -Destination $repairedImage -Force
+    Assert-DreamSkinImageFile -Path $repairedImage
+    $null = Read-DreamSkinTheme -ThemeDirectory $paths.Active
+  }
   return $paths
 }
 

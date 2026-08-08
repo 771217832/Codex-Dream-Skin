@@ -1070,7 +1070,8 @@ async function removeFromSession(session) {
       'dream-art-wide', 'dream-art-standard', 'dream-focus-left',
       'dream-focus-center', 'dream-focus-right', 'dream-safe-left',
       'dream-safe-center', 'dream-safe-right', 'dream-safe-none',
-      'dream-task-ambient', 'dream-task-banner', 'dream-task-off'
+      'dream-task-ambient', 'dream-task-banner', 'dream-task-off',
+      'dream-scanline-off', 'dream-gloom-off'
     );
     document.documentElement?.removeAttribute('data-dream-theme-id');
     for (const property of [
