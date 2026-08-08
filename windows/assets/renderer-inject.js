@@ -61,6 +61,9 @@
     },
     layout: {
       titleHeight: "--dream-token-layout-title-height",
+      headerHeight: "--dream-token-layout-app-bar-height",
+      navigationRowHeight: "--dream-token-layout-navigation-row-height",
+      navigationFontSize: "--dream-token-layout-navigation-font-size",
     },
   };
   const TOKEN_PROPERTIES = Object.values(TOKEN_PROPERTY_MAP)
@@ -82,6 +85,7 @@
     "dream-task-banner",
     "dream-task-off",
     "dream-sidebar-collapsed",
+    "dream-tactical-mode-selecting",
   ];
   const ROOT_PROPERTIES = [
     "--dream-art",
@@ -93,6 +97,9 @@
     "--dream-image-luma",
     "--dream-token-runtime-sidebar-width",
     "--dream-token-runtime-sidebar-navigation-body-height",
+    "--dream-token-runtime-search-left",
+    "--dream-token-runtime-search-bottom",
+    "--dream-token-runtime-search-width",
     "--dream-token-runtime-sidebar-project-frame-top",
     "--dream-token-runtime-sidebar-scrollbar-left",
     "--dream-token-runtime-sidebar-scrollbar-top",
@@ -108,6 +115,7 @@
   const HOME_UTILITY_CLASS = "dream-home-utility";
   const SUMMARY_PANEL_CLASS = "dream-summary-panel";
   const TACTICAL_THEME_ID = "preset-codex-tactical-crt";
+  const TACTICAL_MODE_OPTION_CLASS = "dream-tactical-mode-option";
   const BRAND_MARK_ID = "codex-dream-skin-brand-mark";
   const TACTICAL_FOOTER_ID = "codex-dream-skin-footer";
   const TACTICAL_SCROLLBAR_ID = "codex-dream-skin-project-scrollbar";
@@ -153,6 +161,9 @@
   const SIDEBAR_MODULE_CLASSES = [
     "dream-sidebar-navigation-head",
     "dream-sidebar-navigation-body",
+    "dream-tactical-mode-switch",
+    "dream-tactical-search",
+    "dream-tactical-pull-requests",
     "dream-tactical-navigation-item",
     "dream-tactical-navigation-new-task",
     "dream-sidebar-projects",
@@ -185,6 +196,8 @@
   let tacticalScrollbarDragState = null;
   let navigationWheelNode = null;
   let navigationWheelHandler = null;
+  let tacticalModeSwitchNode = null;
+  let tacticalModeSwitchHandler = null;
   const cliCollapsibleBindings = new Map();
   let nativeBrandPath = null;
   let brandLoadPromise = null;
@@ -256,6 +269,20 @@
     if (typeof titleHeight === "number" && Number.isFinite(titleHeight) &&
         titleHeight >= 24 && titleHeight <= 72) {
       tokenProperties[TOKEN_PROPERTY_MAP.layout.titleHeight] = `${titleHeight}px`;
+    }
+    const headerHeight = rawTokens.layout?.headerHeight;
+    if (typeof headerHeight === "number" && Number.isFinite(headerHeight) &&
+        headerHeight >= 40 && headerHeight <= 120) {
+      tokenProperties[TOKEN_PROPERTY_MAP.layout.headerHeight] = `${headerHeight}px`;
+    }
+    for (const [key, minimum, maximum] of [
+      ["navigationRowHeight", 36, 64],
+      ["navigationFontSize", 14, 30],
+    ]) {
+      const candidate = rawTokens.layout?.[key];
+      if (typeof candidate !== "number" || !Number.isFinite(candidate) ||
+          candidate < minimum || candidate > maximum) continue;
+      tokenProperties[TOKEN_PROPERTY_MAP.layout[key]] = `${candidate}px`;
     }
     const requestedLegacyAccent = typeof config?.palette?.accent === "string"
       ? config.palette.accent.trim() : "";
@@ -505,6 +532,7 @@
   const clearSkinDom = () => {
     const root = document.documentElement;
     clearCliCollapsibleBindings();
+    clearTacticalModeSwitchBinding();
     root?.classList.remove(...ROOT_CLASSES);
     root?.removeAttribute?.(THEME_ATTRIBUTE);
     for (const property of ROOT_PROPERTIES) root?.style.removeProperty(property);
@@ -513,6 +541,14 @@
     document.querySelectorAll(".dream-home-shell").forEach((node) => node.classList.remove("dream-home-shell"));
     document.querySelectorAll(`.${HOME_UTILITY_CLASS}`).forEach((node) => node.classList.remove(HOME_UTILITY_CLASS));
     document.querySelectorAll(`.${SUMMARY_PANEL_CLASS}`).forEach((node) => node.classList.remove(SUMMARY_PANEL_CLASS));
+    document.querySelectorAll(".dream-tactical-navigation-item").forEach((node) => {
+      delete node.dataset.dreamTacticalNavIndex;
+      delete node.dataset.dreamTacticalNavLabel;
+    });
+    document.querySelectorAll(".dream-tactical-mode-switch").forEach((node) => {
+      delete node.dataset.dreamTacticalMode;
+    });
+    document.querySelectorAll(`.${TACTICAL_MODE_OPTION_CLASS}`).forEach((node) => node.remove?.());
     for (const className of SIDEBAR_MODULE_CLASSES) {
       document.querySelectorAll(`.${className}`).forEach((node) => node.classList.remove(className));
     }
@@ -560,6 +596,122 @@
       if (!wanted.has(node)) node.classList.remove(className);
     }
     for (const node of wanted) node.classList.add(className);
+  };
+
+  const clearTacticalModeSwitchBinding = () => {
+    window.removeEventListener?.("pointerdown", tacticalModeSwitchHandler, true);
+    window.removeEventListener?.("click", tacticalModeSwitchHandler, true);
+    tacticalModeSwitchNode = null;
+    tacticalModeSwitchHandler = null;
+  };
+
+  const clearModeSelectingWhenClosed = (attempts = 60) => {
+    if (!document.querySelector('[role="menu"]') || attempts <= 1) {
+      document.documentElement.classList.remove("dream-tactical-mode-selecting");
+      return;
+    }
+    requestAnimationFrame(() => clearModeSelectingWhenClosed(attempts - 1));
+  };
+
+  const chooseNativeMode = (targetMode, attempts = 12) => {
+    const item = [...document.querySelectorAll('[role="menuitem"], [role="menuitemradio"]')].find((candidate) => {
+      const label = `${candidate.innerText || candidate.textContent || ""}`.replace(/\s+/g, " ").trim();
+      return targetMode === "codex"
+        ? /^CODEX/i.test(label)
+        : /^(?:CHATGPT\s*)?WORK/i.test(label);
+    });
+    if (item) {
+      const menu = item.closest?.('[role="menu"]');
+      // ponytail: reuse Codex's menu callback; replace this when the host exposes a public mode API.
+      const fiberKey = Object.keys(item).find((key) => key.startsWith("__reactFiber$"));
+      let fiber = fiberKey ? item[fiberKey] : null;
+      let onSelect = null;
+      for (let depth = 0; fiber && depth < 24; depth += 1, fiber = fiber.return) {
+        if (typeof fiber.memoizedProps?.onSelect !== "function") continue;
+        onSelect = fiber.memoizedProps.onSelect;
+        break;
+      }
+      item.click?.();
+      onSelect?.();
+      menu?.dispatchEvent?.(new KeyboardEvent("keydown", {
+        key: "Escape",
+        code: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }));
+      requestAnimationFrame(() => clearModeSelectingWhenClosed());
+      return;
+    }
+    if (attempts > 1) {
+      requestAnimationFrame(() => chooseNativeMode(targetMode, attempts - 1));
+    } else {
+      document.documentElement.classList.remove("dream-tactical-mode-selecting");
+    }
+  };
+
+  const syncTacticalModeOptions = (node) => {
+    for (const option of document.querySelectorAll(`.${TACTICAL_MODE_OPTION_CLASS}`)) {
+      if (option.parentElement !== node) option.remove?.();
+    }
+    if (!node) return;
+    for (const [mode, label] of [["work", "WORK"], ["codex", "CODEX"]]) {
+      let option = [...node.children].find((child) =>
+        child.classList?.contains?.(TACTICAL_MODE_OPTION_CLASS) &&
+        child.dataset?.dreamTacticalModeTarget === mode);
+      if (!option) {
+        option = document.createElement("span");
+        option.classList.add(TACTICAL_MODE_OPTION_CLASS);
+        option.dataset.dreamTacticalModeTarget = mode;
+        option.setAttribute("aria-hidden", "true");
+        node.appendChild(option);
+      }
+      option.textContent = label;
+      option.title = `Switch to ${label}`;
+    }
+  };
+
+  const syncTacticalModeSwitchBinding = (node) => {
+    if (node === tacticalModeSwitchNode) return;
+    clearTacticalModeSwitchBinding();
+    if (!node) return;
+    tacticalModeSwitchNode = node;
+    tacticalModeSwitchHandler = (event) => {
+      const option = event.target?.closest?.(`.${TACTICAL_MODE_OPTION_CLASS}`);
+      const targetMode = option?.parentElement === node
+        ? option.dataset.dreamTacticalModeTarget
+        : null;
+      if (!targetMode) {
+        event.preventDefault?.();
+        event.stopImmediatePropagation?.();
+        return;
+      }
+      if (node.dataset.dreamTacticalMode === targetMode) {
+        event.preventDefault?.();
+        event.stopImmediatePropagation?.();
+        return;
+      }
+      if (event.type !== "pointerdown") return;
+      document.documentElement.classList.add("dream-tactical-mode-selecting");
+      requestAnimationFrame(() => chooseNativeMode(targetMode));
+    };
+    window.addEventListener?.("pointerdown", tacticalModeSwitchHandler, true);
+    window.addEventListener?.("click", tacticalModeSwitchHandler, true);
+  };
+
+  const syncTacticalSearchAnchor = (search) => {
+    const root = document.documentElement;
+    const rect = search?.getBoundingClientRect?.();
+    if (!rect || !Number.isFinite(rect.left) || !Number.isFinite(rect.bottom) || rect.width <= 0) {
+      for (const property of [
+        "--dream-token-runtime-search-left",
+        "--dream-token-runtime-search-bottom",
+        "--dream-token-runtime-search-width",
+      ]) root?.style.removeProperty(property);
+      return;
+    }
+    root.style.setProperty("--dream-token-runtime-search-left", `${rect.left}px`);
+    root.style.setProperty("--dream-token-runtime-search-bottom", `${rect.bottom}px`);
+    root.style.setProperty("--dream-token-runtime-search-width", `${rect.width}px`);
   };
 
   const restoreAttribute = (node, name, value) => {
@@ -1068,29 +1220,61 @@
   const syncTacticalNavigationItems = (navigationBody, navigationHead) => {
     const tactical = config.themeId === TACTICAL_THEME_ID;
     const definitions = [
-      { match: "NEW TASK", label: "01 NEW TASK", selected: true },
-      { match: "SCHEDULED", label: "02 SCHEDULED" },
-      { match: "PLUGINS", label: "03 PLUGINS" },
-      { match: "SITES", label: "04 SITES" },
-      { match: "CHAT", label: "05 CHAT" },
+      { match: "NEW TASK", index: "01", label: "NEW_TASK" },
+      { match: "SCHEDULED", index: "02", label: "SCHEDULED" },
+      { match: "PLUGINS", index: "03", label: "PLUGINS" },
+      { match: "SITES", index: "04", label: "SITES" },
+      { match: "CHAT", index: "05", label: "CHAT" },
     ];
     const items = [];
-    const selected = [];
     const navigationRoots = [navigationHead, navigationBody].filter(Boolean);
-    for (const button of navigationRoots.flatMap((root) =>
-      [...(root.querySelectorAll?.("button, [role=\"button\"], a") || [])])) {
+    const controls = navigationRoots.flatMap((root) =>
+      [...(root.querySelectorAll?.("button, [role=\"button\"], a") || [])]);
+    const headControls = navigationHead
+      ? [...(navigationHead.querySelectorAll?.("button, [role=\"button\"], a") || [])]
+      : [];
+    const modeSwitch = headControls.find((button) =>
+      button.getAttribute?.("aria-haspopup") === "menu" &&
+      /SWITCH MODE/i.test(button.getAttribute?.("aria-label") || "")) || null;
+    const search = headControls.find((button) =>
+      /^SEARCH$/i.test(button.getAttribute?.("aria-label") || "")) || null;
+    const pullRequests = controls.find((button) =>
+      /PULL REQUESTS/i.test(`${button.textContent || ""}`)) || null;
+
+    if (tactical && modeSwitch) {
+      const currentMode = `${modeSwitch.getAttribute?.("aria-label") || ""} ${modeSwitch.textContent || ""}`;
+      modeSwitch.dataset.dreamTacticalMode = /CURRENT MODE:\s*CODEX/i.test(currentMode)
+        ? "codex"
+        : "work";
+      delete modeSwitch.dataset.dreamTacticalNavIndex;
+      delete modeSwitch.dataset.dreamTacticalNavLabel;
+    }
+
+    for (const button of controls) {
+      if (button === modeSwitch || button === search || button === pullRequests) continue;
       const label = `${button.textContent || ""}`.replace(/\s+/g, " ").trim().toUpperCase();
       const definition = definitions.find((candidate) => label.includes(candidate.match));
       if (!tactical || !definition) continue;
+      button.dataset.dreamTacticalNavIndex = definition.index;
       button.dataset.dreamTacticalNavLabel = definition.label;
       items.push(button);
-      if (definition.selected) selected.push(button);
     }
     for (const button of document.querySelectorAll(".dream-tactical-navigation-item")) {
-      if (!items.includes(button)) delete button.dataset.dreamTacticalNavLabel;
+      if (items.includes(button)) continue;
+      delete button.dataset.dreamTacticalNavIndex;
+      delete button.dataset.dreamTacticalNavLabel;
     }
+    for (const button of document.querySelectorAll(".dream-tactical-mode-switch")) {
+      if (button !== modeSwitch || !tactical) delete button.dataset.dreamTacticalMode;
+    }
+    syncOwnedClass("dream-tactical-mode-switch", tactical ? [modeSwitch] : []);
+    syncOwnedClass("dream-tactical-search", tactical ? [search] : []);
+    syncOwnedClass("dream-tactical-pull-requests", tactical ? [pullRequests] : []);
     syncOwnedClass("dream-tactical-navigation-item", tactical ? items : []);
-    syncOwnedClass("dream-tactical-navigation-new-task", tactical ? selected : []);
+    syncOwnedClass("dream-tactical-navigation-new-task", []);
+    syncTacticalModeOptions(tactical ? modeSwitch : null);
+    syncTacticalModeSwitchBinding(tactical ? modeSwitch : null);
+    syncTacticalSearchAnchor(tactical ? search : null);
   };
 
   const syncTacticalProjectTree = (projects) => {

@@ -47,7 +47,10 @@
       "brandOpacity": 0.13
     },
     "layout": {
-      "titleHeight": 38
+      "titleHeight": 38,
+      "headerHeight": 50.4,
+      "navigationRowHeight": 36,
+      "navigationFontSize": 22
     }
   }
 }

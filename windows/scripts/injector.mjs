@@ -447,7 +447,7 @@ const THEME_TOKEN_KEYS = {
     "scanlineOpacity", "scanlineWidth", "scanlineDepth", "scanlineSpeed",
     "gridOpacity", "vignetteOpacity", "brandOpacity",
   ]),
-  layout: new Set(["titleHeight"]),
+  layout: new Set(["titleHeight", "headerHeight", "navigationRowHeight", "navigationFontSize"]),
 };
 
 function normalizedUnit(value, name) {
@@ -521,6 +521,20 @@ function normalizedThemeTokens(value) {
   if (typeof titleHeight === "number" && Number.isFinite(titleHeight) &&
       titleHeight >= 24 && titleHeight <= 72) {
     tokens.layout.titleHeight = titleHeight;
+  }
+  const headerHeight = layout.headerHeight;
+  if (typeof headerHeight === "number" && Number.isFinite(headerHeight) &&
+      headerHeight >= 40 && headerHeight <= 120) {
+    tokens.layout.headerHeight = headerHeight;
+  }
+  for (const [key, minimum, maximum] of [
+    ["navigationRowHeight", 36, 64],
+    ["navigationFontSize", 14, 30],
+  ]) {
+    const candidate = layout[key];
+    if (typeof candidate !== "number" || !Number.isFinite(candidate) ||
+        candidate < minimum || candidate > maximum) continue;
+    tokens.layout[key] = candidate;
   }
   return tokens;
 }
@@ -1071,8 +1085,16 @@ async function removeFromSession(session) {
     document.querySelectorAll('.dream-home-shell').forEach((node) => node.classList.remove('dream-home-shell'));
     document.querySelectorAll('.dream-home-utility').forEach((node) => node.classList.remove('dream-home-utility'));
     document.querySelectorAll('.dream-summary-panel').forEach((node) => node.classList.remove('dream-summary-panel'));
+    document.querySelectorAll('.dream-tactical-navigation-item').forEach((node) => {
+      delete node.dataset.dreamTacticalNavIndex;
+      delete node.dataset.dreamTacticalNavLabel;
+    });
+    document.querySelectorAll('.dream-tactical-mode-switch').forEach((node) => {
+      delete node.dataset.dreamTacticalMode;
+    });
     for (const className of [
       'dream-sidebar-navigation-head', 'dream-sidebar-navigation-body',
+      'dream-tactical-mode-switch', 'dream-tactical-search', 'dream-tactical-pull-requests',
       'dream-tactical-navigation-item', 'dream-tactical-navigation-new-task',
       'dream-sidebar-projects', 'dream-project-tree-item', 'dream-project-tree-folder',
       'dream-sidebar-tasks', 'dream-sidebar-native-footer',
@@ -1107,6 +1129,9 @@ async function verifyRemovedSession(session) {
     !document.querySelector('.dream-summary-panel') &&
     !document.querySelector('.dream-sidebar-navigation-head') &&
     !document.querySelector('.dream-sidebar-navigation-body') &&
+    !document.querySelector('.dream-tactical-mode-switch') &&
+    !document.querySelector('.dream-tactical-search') &&
+    !document.querySelector('.dream-tactical-pull-requests') &&
     !document.querySelector('.dream-tactical-navigation-item') &&
     !document.querySelector('.dream-tactical-navigation-new-task') &&
     !document.querySelector('.dream-project-tree-item') &&

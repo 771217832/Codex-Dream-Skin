@@ -82,7 +82,7 @@ Import a UI-free wallpaper rather than a preview containing a window, sidebar, c
 
 After installation, `Codex Tactical CRT` appears under the tray's saved themes alongside Gothic; Arina remains the first-install active theme. Select the preset and choose reapply to enable it. The preset is dark-only and preserves Codex's native layout and controls while adding military CRT colors, hard instrument borders, typography, and pointer-transparent decoration. Its amber application header uses a taller instrument-console proportion, while the central task area carries a deep-green phosphor field and, when native geometry can be obtained safely, a low-intensity OpenAI phosphor mark.
 
-The sidebar keeps Codex's real data and interactions: `01.NAVIGATION` contains New task, Scheduled, Plugins, Stations, Pull requests, and Chats; `02.PROJECTS` contains projects and their real threads; and the central current-task panel is `03.MAIN_TASK`. The native bottom Tasks control remains an unnumbered utility area. The module headings and borders do not create fictional destinations or replace native controls.
+The sidebar keeps Codex's real data and interactions. `NAVIGATION` retains the search action and anchors its panel below the search field. The native mode switch appears as `MODE // WORK CODEX`; click `WORK` or `CODEX` directly to switch. Five aligned primary rows run from `01 NEW_TASK` through `05 CHAT`. In Codex mode, Pull requests remains available as a compact native control on the right side of the `SITES` row, so it does not interrupt the 01-05 rhythm. `PROJECT` contains projects and their real threads, while the central current-task panel is `MAINTASK`. The native bottom Tasks control remains an unnumbered utility area. The module headings and borders do not create fictional destinations or replace native controls.
 
 All adjustable Tactical CRT values live in the optional `tokens` object in `theme.json`. During development, edit [`presets/preset-codex-tactical-crt/theme.json`](./presets/preset-codex-tactical-crt/theme.json). After installation, edit `%LOCALAPPDATA%\CodexDreamSkin\themes\preset-codex-tactical-crt\theme.json`, then select and reapply that saved theme from the tray.
 
@@ -90,6 +90,7 @@ All adjustable Tactical CRT values live in the optional `tokens` object in `them
 - `strokes` contains `subtle`, `default`, `strong`, and `focus` pixel values in the `0–50` range.
 - `radii` contains `panel` and `control` pixel values in the `0–16` range.
 - `effects` contains `scanlineOpacity`, `gridOpacity`, `vignetteOpacity`, and `brandOpacity` in the `0–0.35` range. `brandOpacity` independently controls the central phosphor mark's opacity.
+- `layout` includes `titleHeight` (`24–72px`), `headerHeight` (`40–120px`), `navigationRowHeight` for the 01–05 row rhythm (`36–64px`), and `navigationFontSize` for their index and label text (`14–30px`).
 
 Validation is per field: an invalid value falls back only for that preset default, and unknown fields are ignored. `tokens.colors.accent` takes precedence over the legacy-compatible `palette.accent`. The managed stylesheet at [`assets/presets/preset-codex-tactical-crt.css`](./assets/presets/preset-codex-tactical-crt.css) reads every color, stroke, radius, and CRT opacity from these variables, so one token change updates the matching visual hierarchy.
 

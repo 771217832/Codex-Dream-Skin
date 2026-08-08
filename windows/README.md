@@ -82,7 +82,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-dream-s
 
 安装后，`Codex Tactical CRT` 会和 Gothic 一样出现在托盘的「已保存主题」中；首次安装仍以 Arina 为当前主题。选择该预设后使用「重新应用主题」即可启用。它固定为暗色，保留 Codex 的原生布局和真实控件，只增加军用 CRT 风格的颜色、硬边框、字体与非交互装饰层。顶部琥珀色应用栏采用更高的仪表舱比例；中央任务区使用深绿色磷光场，并在可安全取得原生几何时显示低强度 OpenAI 磷光标记。
 
-侧栏沿用 Codex 的真实数据和交互：`01.NAVIGATION` 包含「新建任务」「已安排」「插件」「站点」「拉取请求」和「聊天」，`02.PROJECTS` 包含项目及项目内的真实线程；中央当前任务面板为 `03.MAIN_TASK`。原生底部「任务」控件保留为未编号辅助区。模块标题和边框不会创建虚构入口，也不会替换原生控件。
+侧栏沿用 Codex 的真实数据和交互：`NAVIGATION` 顶部保留搜索入口，搜索面板会贴在入口下方；原生模式开关排成同一行的 `MODE // WORK CODEX`，直接点击 `WORK` 或 `CODEX` 即可切换。五个主入口按 `01 NEW_TASK` 到 `05 CHAT` 对齐。Codex 模式中的「拉取请求」保留为 `SITES` 行右侧的紧凑原生按钮，不打断 01–05 的行距。`PROJECT` 包含项目及项目内的真实线程；中央当前任务面板为 `MAINTASK`。原生底部「任务」控件保留为未编号辅助区。模块标题和边框不会创建虚构入口，也不会替换原生控件。
 
 整套 Tactical CRT 的可调视觉参数集中在 `theme.json` 的可选 `tokens` 对象。开发时编辑 [`presets/preset-codex-tactical-crt/theme.json`](./presets/preset-codex-tactical-crt/theme.json)；安装后可编辑 `%LOCALAPPDATA%\CodexDreamSkin\themes\preset-codex-tactical-crt\theme.json`，再从托盘重新选择该主题并应用。令牌分为：
 
@@ -90,6 +90,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-dream-s
 - `strokes`：`subtle`、`default`、`strong`、`focus`，单位为像素，范围 `0–50`。
 - `radii`：`panel`、`control`，单位为像素，范围 `0–16`。
 - `effects`：`scanlineWidth` 控制扫描线粗细（`0.5–12px`），`scanlineDepth` 控制扫描线深度（`0–0.6`），`scanlineSpeed` 控制滚动周期（`0.25–120` 秒，越小越快）；另有 `gridOpacity`、`vignetteOpacity` 和 `brandOpacity`。旧版 `scanlineOpacity` 仍兼容。
+- `layout`：`titleHeight` 控制各子模块标题高度（`24–72px`）；`headerHeight` 控制最上方 Header 总高度（`40–120px`）；`navigationRowHeight` 控制 01–05 的行高/行距（`36–64px`）；`navigationFontSize` 控制编号和入口文字字号（`14–30px`）。
 
 字段逐项校验：非法值只回退对应的预设默认值，未知字段会被忽略。`tokens.colors.accent` 优先于兼容旧主题的 `palette.accent`。预设样式集中在 [`assets/presets/preset-codex-tactical-crt.css`](./assets/presets/preset-codex-tactical-crt.css)，所有颜色、线宽、圆角和 CRT 透明度都从令牌读取，因此修改一处即可同步对应层级。
 

@@ -53,7 +53,12 @@ assert.deepEqual(theme.tokens.effects, {
   vignetteOpacity: 0.28,
   brandOpacity: 0.13,
 });
-assert.deepEqual(theme.tokens.layout, { titleHeight: 38 });
+assert.deepEqual(theme.tokens.layout, {
+  titleHeight: 38,
+  headerHeight: 50.4,
+  navigationRowHeight: 36,
+  navigationFontSize: 22,
+});
 
 assert.deepEqual(readImageMetadata(background, ".jpg"), {
   width: 2560,
@@ -142,18 +147,35 @@ assert.match(css, /#codex-dream-skin-chrome\s*\{[\s\S]*?pointer-events:\s*none/i
 assert.match(css, /\.dream-sidebar-navigation-head\s*\{[\s\S]*?border:/i);
 assert.match(css, /\.dream-sidebar-navigation-body\s*\{[\s\S]*?border:/i);
 assert.match(css, /\.dream-sidebar-navigation-body\s*\{[\s\S]*?position:\s*sticky[\s\S]*?z-index:\s*2[\s\S]*?top:\s*0/i);
+assert.match(css, /--dream-token-layout-navigation-row-height:\s*48px/i);
+assert.match(css, /--dream-token-layout-navigation-font-size:\s*22px/i);
+assert.match(css, /\.global-command-menu-dialog\[role="dialog"\]\s*\{[\s\S]*?--dream-token-runtime-search-bottom[\s\S]*?translate:\s*none\s*!important[\s\S]*?transform:\s*none\s*!important/i);
+assert.match(css, /\.dream-tactical-search::after\s*\{[\s\S]*?content:\s*"SEARCH"/i);
+assert.match(css, /\.dream-tactical-pull-requests\s*\{[\s\S]*?position:\s*absolute\s*!important[\s\S]*?--dream-token-layout-navigation-row-height/i);
+assert.match(css, /\.dream-tactical-mode-switch::before\s*\{[\s\S]*?content:\s*"MODE \/\/"/i);
+assert.match(css, /\.dream-tactical-mode-option\[data-dream-tactical-mode-target="work"\]\s*\{[\s\S]*?9ch/i);
+assert.match(css, /\.dream-tactical-mode-option\[data-dream-tactical-mode-target="codex"\]\s*\{[\s\S]*?15ch/i);
+assert.match(css, /dream-tactical-mode-selecting[\s\S]*?\[role="menu"\][\s\S]*?opacity:\s*var\(--dream-token-effect-hidden-opacity\)\s*!important/i);
+assert.match(css, /\.dream-tactical-navigation-item::before[\s\S]*?content:\s*attr\(data-dream-tactical-nav-index\)/i);
+assert.match(css, /\.dream-tactical-navigation-item::after[\s\S]*?content:\s*attr\(data-dream-tactical-nav-label\)/i);
+assert.ok(rendererSource.includes(
+  'modeSwitch.dataset.dreamTacticalMode = /CURRENT MODE:\\s*CODEX/i.test(currentMode)',
+));
+assert.match(rendererSource, /\?\s*"codex"\s*:\s*"work"/i);
+assert.match(rendererSource, /memoizedProps\?\.onSelect[\s\S]*?onSelect\?\.\(\)/i);
+assert.match(rendererSource, /match:\s*"NEW TASK"[\s\S]*?index:\s*"01"[\s\S]*?label:\s*"NEW_TASK"/i);
 assert.match(css, /\.dream-sidebar-projects\s*\{[\s\S]*?border:/i);
 assert.match(css, /--dream-token-label-navigation:\s*"NAVIGATION"/i);
 assert.match(css, /--dream-token-label-projects:\s*"PROJECT"/i);
 assert.match(css, /--dream-token-label-main:\s*"MAINTASK"/i);
 assert.match(css, /--dream-token-label-undecide:\s*"DETAIL"/i);
 assert.match(css, /--dream-token-label-monitor:\s*"MONITOR"/i);
-assert.match(css, /--dream-token-layout-app-bar-height:\s*72px/i);
+assert.match(css, /--dream-token-layout-app-bar-height:\s*50\.4px/i);
 assert.match(css, /--dream-token-layout-footer-height:\s*48px/i);
 assert.match(css, /--dream-token-layout-panel-gap:\s*6px/i);
 assert.match(css, /--dream-token-layout-section-gap:\s*6px/i);
 assert.match(css, /--dream-token-layout-project-title-height:\s*var\(--dream-token-layout-title-height\)/i);
-assert.match(css, /--dream-token-layout-header-inset:\s*5px/i);
+assert.match(css, /--dream-token-layout-header-inset:\s*4px/i);
 assert.match(css, /--dream-token-layout-menu-button-width:\s*126px/i);
 assert.match(css, /--dream-token-layout-active-shell-gap:\s*var\(--dream-token-layout-shell-gap\)/i);
 assert.match(css, /@media \(max-width:\s*980px\)[\s\S]*?--dream-token-layout-active-shell-gap:\s*var\(--dream-token-layout-shell-gap-compact\)/i);
@@ -202,7 +224,9 @@ assert.match(css, /--dream-token-stroke-project-tree:\s*2px/i);
 assert.match(css, /\[data-app-action-sidebar-project-list-id\]::before\s*\{[\s\S]*?width:\s*var\(--dream-token-stroke-project-tree\)/i);
 assert.match(css, /\[data-app-action-sidebar-thread-row\]::before\s*\{[\s\S]*?border-top:\s*var\(--dream-token-stroke-project-tree\)/i);
 assert.match(css, /\[data-app-action-sidebar-thread-row\]::after\s*\{[\s\S]*?content:\s*"\[DONE\]"/i);
-assert.match(css, /:has\(button\[aria-label="Stop"\]:not\(\[disabled\]\):not\(\[aria-disabled="true"\]\)\)[\s\S]*?\[data-app-action-sidebar-thread-active="true"\]::after\s*\{[\s\S]*?\[WORKING\][\s\S]*?\[LIVE\] IN PROGRESS/i);
+assert.match(css, /\[data-app-action-sidebar-thread-row\]:has\(\.animate-spin\)::after\s*\{[\s\S]*?\[WORKING\][\s\S]*?\[LIVE\] IN PROGRESS/i);
+assert.doesNotMatch(css, /\[data-app-action-sidebar-thread-active="true"\][^\{]*::after\s*\{[\s\S]*?\[WORKING\]/i,
+  "WORKING must follow each row's native running marker, not the selected task.");
 assert.match(css, /\.dream-tactical-topbar-hidden\s*\{[\s\S]*?display:\s*none/i);
 assert.match(css, /\.dream-tactical-menu-button::before\s*\{[\s\S]*?--dream-token-layout-menu-icon-size/i);
 assert.match(css, /--dream-token-module-icon-navigation:\s*url\("\.\.\/icons\/gps-line\.svg"\)/i);
@@ -219,10 +243,18 @@ assert.match(css, /\.dream-tactical-menu-file::before\s*\{[\s\S]*?--dream-token-
 assert.match(css, /\.dream-tactical-menu-edit::before\s*\{[\s\S]*?--dream-token-module-icon-menu-edit/i);
 assert.match(css, /\.dream-tactical-menu-view::before\s*\{[\s\S]*?--dream-token-module-icon-menu-view/i);
 assert.match(css, /\.dream-tactical-menu-help::before\s*\{[\s\S]*?--dream-token-module-icon-menu-help/i);
-assert.match(css, /\.dream-tactical-menu-button:hover\s*\{[\s\S]*?background:\s*var\(--dream-token-color-accent\)/i);
+assert.match(css, /\.dream-tactical-menu-button\s*\{[\s\S]*?background:\s*var\(--dream-token-color-accent\)/i);
+assert.match(css, /\.dream-tactical-menu-button:hover\s*\{[\s\S]*?background:\s*var\(--dream-token-color-canvas\)/i);
+assert.match(css, /\.dream-tactical-menu-button\[aria-expanded="true"\][\s\S]*?background:\s*var\(--dream-token-color-canvas\)/i);
 assert.match(css, /\.dream-sidebar-navigation-body button:hover[\s\S]*?background:\s*var\(--dream-token-color-accent\)/i);
-assert.match(css, /\.dream-sidebar-navigation-head::before\s*\{[\s\S]*?background:\s*var\(--dream-token-color-line-strong\)/i);
-assert.match(css, /main\.main-surface\s*>\s*header\.app-header-tint::before\s*\{[\s\S]*?background:\s*var\(--dream-token-color-line-strong\)/i);
+assert.match(css, /\.dream-sidebar-navigation-head::before\s*\{[\s\S]*?background:\s*var\(--dream-token-color-transparent\)/i);
+assert.match(css, /\.dream-sidebar-projects\s*>\s*div\s*>\s*\[class~="group\/nav-section-title"\]\s*\{[\s\S]*?background:\s*var\(--dream-token-color-transparent\)/i);
+assert.match(css, /main\.main-surface\s*>\s*header\.app-header-tint::before\s*\{[\s\S]*?background:\s*var\(--dream-token-color-transparent\)/i);
+assert.match(css, /main\.main-surface\s*>\s*header\.app-header-tint[^\{]*\{[\s\S]*?border-bottom:\s*var\(--dream-token-stroke-strong\) solid var\(--dream-token-color-line-strong\)/i);
+assert.match(css, /@media\s*\(min-width:\s*1180px\)[\s\S]*?main\.main-surface\s*>\s*header\.app-header-tint\s*\{[\s\S]*?right:\s*auto\s*!important[\s\S]*?width:\s*calc\(100% - var\(--dream-token-layout-right-rail-total\)\)/i);
+assert.match(css, /@media\s*\(min-width:\s*1180px\)[\s\S]*?dream-task-ambient[^\{]*\{[\s\S]*?border:\s*none\s*!important/i);
+assert.match(css, /main\.main-surface:not\(\.dream-home-shell\)::before[^\{]*\{[\s\S]*?z-index:\s*30\s*!important[\s\S]*?opacity:\s*var\(--dream-token-effect-visible-opacity\)\s*!important[\s\S]*?background:\s*var\(--dream-token-color-transparent\)\s*!important[\s\S]*?border:\s*var\(--dream-token-stroke-strong\) solid var\(--dream-token-color-line-strong\)\s*!important/i);
+assert.match(css, /\.dream-tactical-right-title\s*\{[\s\S]*?background:\s*var\(--dream-token-color-transparent\)/i);
 assert.match(css, /#codex-dream-skin-footer\s*\{[\s\S]*?border:\s*var\(--dream-token-stroke-strong\) solid var\(--dream-token-color-line-strong\)/i);
 assert.match(css, /aside\.app-shell-left-panel::before\s*\{[\s\S]*?box-shadow:\s*var\(--dream-token-shadow-none\)/i);
 assert.match(css, /\.dream-composer-input-line\s*\[contenteditable="true"\]\s*\{[\s\S]*?caret-shape:\s*block/i);
@@ -306,6 +338,9 @@ assert.equal(tacticalPayload.tokens.strokes.focus, 2);
 assert.equal(tacticalPayload.tokens.strokes.projectTree, 2);
 assert.equal(tacticalPayload.tokens.effects.brandOpacity, 0.13);
 assert.equal(tacticalPayload.tokens.layout.titleHeight, 38);
+assert.equal(tacticalPayload.tokens.layout.headerHeight, 50.4);
+assert.equal(tacticalPayload.tokens.layout.navigationRowHeight, 36);
+assert.equal(tacticalPayload.tokens.layout.navigationFontSize, 22);
 const gothicPayload = checkPayload(path.join(windowsRoot, "presets", "preset-gothic-void-crusade"));
 assert.equal(gothicPayload.managedPresetCssBytes, 0,
   "A preset without managed CSS must continue with the base theme only.");
@@ -338,7 +373,12 @@ try {
         vignetteOpacity: 0.351,
         brandOpacity: 0.36,
       },
-      layout: { titleHeight: 23 },
+      layout: {
+        titleHeight: 23,
+        headerHeight: 39,
+        navigationRowHeight: 35,
+        navigationFontSize: 31,
+      },
       unknown: { injected: "#ffffff" },
     },
   }));

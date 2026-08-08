@@ -57,6 +57,7 @@ function createFixture({
   let hasSummaryPanel = summaryPanelPresent;
   let root;
   const storage = new Map();
+  const windowListeners = new Map();
 
   const queueRootClassMutation = () => {
     for (const observer of observers) {
@@ -168,6 +169,10 @@ function createFixture({
         return node.querySelectorAll(selector)[0] || null;
       },
       querySelectorAll(selector) {
+        if (selector.includes(",")) {
+          return [...new Set(selector.split(",").flatMap((part) =>
+            node.querySelectorAll(part.trim())))];
+        }
         const results = [];
         const visit = (candidate) => {
           if (candidate.matches?.(selector)) results.push(candidate);
@@ -257,6 +262,14 @@ function createFixture({
     const head = makeFixtureNode("div", ["sidebar-head"]);
     head.getBoundingClientRect = () => ({ height: 126 });
     const headButton = makeFixtureNode("button");
+    headButton.textContent = "ChatGPT Work";
+    headButton.setAttribute("aria-label", "Switch mode, current mode: ChatGPT Work");
+    headButton.setAttribute("aria-haspopup", "menu");
+    const searchButton = makeFixtureNode("button");
+    searchButton.setAttribute("aria-label", "Search");
+    searchButton.getBoundingClientRect = () => ({ left: 16, bottom: 132, width: 280 });
+    const newTaskButton = makeFixtureNode("button");
+    newTaskButton.textContent = "New task Ctrl+N";
     const scroll = makeFixtureNode("div", ["vertical-scroll-fade-mask"]);
     scroll.scrollHeight = 900;
     scroll.clientHeight = 620;
@@ -264,6 +277,9 @@ function createFixture({
     const actions = makeFixtureNode("div", ["sidebar-actions"]);
     actions.getBoundingClientRect = () => ({ height: 170 });
     const actionButton = makeFixtureNode("button");
+    actionButton.textContent = "Scheduled";
+    const pullRequestButton = makeFixtureNode("button");
+    pullRequestButton.textContent = "Pull requests";
     const projects = makeFixtureNode("div", ["sidebar-project-fixture"]);
     projects.getBoundingClientRect = () => ({
       left: 8, top: 304, right: 298, bottom: 760, width: 290, height: 456,
@@ -282,7 +298,10 @@ function createFixture({
     nativeFooter.appendChild(profileButton);
     nativeFooter.appendChild(extraFooterButton);
     head.appendChild(headButton);
+    head.appendChild(searchButton);
+    head.appendChild(newTaskButton);
     actions.appendChild(actionButton);
+    actions.appendChild(pullRequestButton);
     projects.appendChild(projectTitle);
     projects.appendChild(projectCwd);
     tasks.appendChild(taskTitle);
@@ -297,7 +316,7 @@ function createFixture({
     body.appendChild(aside);
     sidebar = {
       aside, sidebarFrame, nav, head, scroll, actions, projects, tasks, nativeFooter, avatar,
-      extraFooterButton,
+      extraFooterButton, headButton, searchButton, newTaskButton, actionButton, pullRequestButton,
     };
   }
 
@@ -428,6 +447,15 @@ function createFixture({
   const context = {
     window: {
       matchMedia() { return { matches: osAppearance === "dark" }; },
+      addEventListener(type, listener) {
+        if (!windowListeners.has(type)) windowListeners.set(type, new Set());
+        windowListeners.get(type).add(listener);
+      },
+      removeEventListener(type, listener) { windowListeners.get(type)?.delete(listener); },
+      dispatch(type, event = {}) {
+        for (const listener of windowListeners.get(type) || []) listener(event);
+      },
+      listenerCount(type) { return windowListeners.get(type)?.size || 0; },
     },
     document,
     localStorage: {
@@ -572,6 +600,38 @@ const originalScrollChildren = [...sidebarModules.sidebar.scroll.children];
 vm.runInNewContext(buildPayload({ id: "preset-codex-tactical-crt" }), sidebarModules.context);
 assert.equal(sidebarModules.sidebar.head.classList.contains("dream-sidebar-navigation-head"), true);
 assert.equal(sidebarModules.sidebar.actions.classList.contains("dream-sidebar-navigation-body"), true);
+assert.equal(sidebarModules.sidebar.headButton.classList.contains("dream-tactical-mode-switch"), true);
+assert.equal(sidebarModules.sidebar.headButton.classList.contains("dream-tactical-navigation-item"), false,
+  "The native mode switch must not be mistaken for the 05 Chat navigation item.");
+assert.equal(sidebarModules.sidebar.headButton.dataset.dreamTacticalMode, "work");
+assert.equal(sidebarModules.context.window.listenerCount("click"), 1,
+  "The Tactical mode labels must bind one direct-click handler.");
+assert.equal(sidebarModules.context.window.listenerCount("pointerdown"), 1);
+const modeOptions = sidebarModules.sidebar.headButton.children.filter((node) =>
+  node.classList.contains("dream-tactical-mode-option"));
+assert.deepEqual(modeOptions.map((node) => node.textContent), ["WORK", "CODEX"]);
+assert.deepEqual(modeOptions.map((node) => node.dataset.dreamTacticalModeTarget), ["work", "codex"]);
+let modeRowPrevented = false;
+let modeRowStopped = false;
+sidebarModules.context.window.dispatch("click", {
+  target: sidebarModules.sidebar.headButton,
+  preventDefault() { modeRowPrevented = true; },
+  stopImmediatePropagation() { modeRowStopped = true; },
+});
+assert.equal(modeRowPrevented && modeRowStopped, true,
+  "MODE // and row whitespace must not open the native dropdown.");
+sidebarModules.sidebar.headButton.setAttribute("aria-label", "Switch mode, current mode: Codex");
+sidebarModules.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
+assert.equal(sidebarModules.sidebar.headButton.children.filter((node) =>
+  node.classList.contains("dream-tactical-mode-option")).length, 2,
+"Repeated ensure passes must not duplicate Tactical mode options.");
+assert.equal(sidebarModules.sidebar.headButton.dataset.dreamTacticalMode, "codex");
+assert.equal(sidebarModules.sidebar.searchButton.classList.contains("dream-tactical-search"), true);
+assert.equal(sidebarModules.sidebar.pullRequestButton.classList.contains("dream-tactical-pull-requests"), true);
+assert.equal(sidebarModules.sidebar.newTaskButton.dataset.dreamTacticalNavIndex, "01");
+assert.equal(sidebarModules.sidebar.newTaskButton.dataset.dreamTacticalNavLabel, "NEW_TASK");
+assert.equal(sidebarModules.sidebar.actionButton.dataset.dreamTacticalNavIndex, "02");
+assert.equal(sidebarModules.sidebar.actionButton.dataset.dreamTacticalNavLabel, "SCHEDULED");
 assert.equal(sidebarModules.sidebar.projects.classList.contains("dream-sidebar-projects"), true);
 assert.equal(sidebarModules.sidebar.tasks.classList.contains("dream-sidebar-tasks"), true);
 assert.equal(sidebarModules.sidebar.nativeFooter.classList.contains("dream-sidebar-native-footer"), true);
@@ -585,6 +645,9 @@ assert.match(tacticalFooter.querySelector(".dream-footer-clock").textContent, /^
 assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-sidebar-width"), "290px");
 assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-sidebar-navigation-body-height"), "170px");
 assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-sidebar-project-frame-top"), "304px");
+assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-search-left"), "16px");
+assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-search-bottom"), "132px");
+assert.equal(sidebarModules.rootStyles.get("--dream-token-runtime-search-width"), "280px");
 assert.equal(sidebarModules.nodes.has("codex-dream-skin-project-scrollbar"), true,
   "The Tactical preset must bind its scrollbar overlay to the Project module.");
 assert.equal(
@@ -612,6 +675,16 @@ sidebarModules.setSidebarPresent(false);
 sidebarModules.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
 assert.equal(sidebarModules.sidebar.head.classList.contains("dream-sidebar-navigation-head"), false);
 assert.equal(sidebarModules.sidebar.actions.classList.contains("dream-sidebar-navigation-body"), false);
+assert.equal(sidebarModules.sidebar.headButton.classList.contains("dream-tactical-mode-switch"), false);
+assert.equal(sidebarModules.sidebar.searchButton.classList.contains("dream-tactical-search"), false);
+assert.equal(sidebarModules.sidebar.pullRequestButton.classList.contains("dream-tactical-pull-requests"), false);
+assert.equal(sidebarModules.sidebar.headButton.dataset.dreamTacticalMode, undefined);
+assert.equal(sidebarModules.context.window.listenerCount("click"), 0);
+assert.equal(sidebarModules.context.window.listenerCount("pointerdown"), 0);
+assert.equal(sidebarModules.sidebar.headButton.children.some((node) =>
+  node.classList.contains("dream-tactical-mode-option")), false);
+assert.equal(sidebarModules.sidebar.newTaskButton.dataset.dreamTacticalNavIndex, undefined);
+assert.equal(sidebarModules.sidebar.newTaskButton.dataset.dreamTacticalNavLabel, undefined);
 assert.equal(sidebarModules.sidebar.projects.classList.contains("dream-sidebar-projects"), false);
 assert.equal(sidebarModules.sidebar.tasks.classList.contains("dream-sidebar-tasks"), false);
 assert.equal(sidebarModules.sidebar.nativeFooter.classList.contains("dream-sidebar-native-footer"), false);
@@ -622,6 +695,12 @@ sidebarModules.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
 assert.equal(sidebarModules.sidebar.projects.classList.contains("dream-sidebar-projects"), true);
 assert.equal(sidebarModules.context.window.__CODEX_DREAM_SKIN_STATE__.cleanup(), true);
 assert.equal(sidebarModules.sidebar.head.classList.contains("dream-sidebar-navigation-head"), false);
+assert.equal(sidebarModules.sidebar.headButton.classList.contains("dream-tactical-mode-switch"), false);
+assert.equal(sidebarModules.sidebar.searchButton.classList.contains("dream-tactical-search"), false);
+assert.equal(sidebarModules.sidebar.pullRequestButton.classList.contains("dream-tactical-pull-requests"), false);
+assert.equal(sidebarModules.sidebar.headButton.dataset.dreamTacticalMode, undefined);
+assert.equal(sidebarModules.sidebar.newTaskButton.dataset.dreamTacticalNavIndex, undefined);
+assert.equal(sidebarModules.sidebar.newTaskButton.dataset.dreamTacticalNavLabel, undefined);
 assert.equal(sidebarModules.sidebar.actions.classList.contains("dream-sidebar-navigation-body"), false);
 assert.equal(sidebarModules.sidebar.projects.classList.contains("dream-sidebar-projects"), false);
 assert.equal(sidebarModules.sidebar.tasks.classList.contains("dream-sidebar-tasks"), false);
@@ -857,7 +936,12 @@ const tokenizedPayload = buildPayload({
       vignetteOpacity: 0.22,
       brandOpacity: 0.14,
     },
-    layout: { titleHeight: 42 },
+    layout: {
+      titleHeight: 42,
+      headerHeight: 50.4,
+      navigationRowHeight: 46,
+      navigationFontSize: 21,
+    },
   },
 });
 vm.runInNewContext(tokenizedPayload, tokenized.context);
@@ -878,6 +962,9 @@ assert.equal(tokenized.rootStyles.get("--dream-token-effect-scanline-depth"), "0
 assert.equal(tokenized.rootStyles.get("--dream-token-effect-scanline-speed"), "7s");
 assert.equal(tokenized.rootStyles.get("--dream-token-effect-brand-opacity"), "0.14");
 assert.equal(tokenized.rootStyles.get("--dream-token-layout-title-height"), "42px");
+assert.equal(tokenized.rootStyles.get("--dream-token-layout-app-bar-height"), "50.4px");
+assert.equal(tokenized.rootStyles.get("--dream-token-layout-navigation-row-height"), "46px");
+assert.equal(tokenized.rootStyles.get("--dream-token-layout-navigation-font-size"), "21px");
 assert.equal(tokenized.rootStyles.has("--dream-token-effect-grid-opacity"), false);
 assert.equal(tokenized.rootStyles.has("--dream-token-color-line-strong"), false);
 assert.equal(tokenized.rootStyles.has("--dream-token-color-line-default"), false);
@@ -891,6 +978,9 @@ assert.equal(tokenized.rootStyles.has("--dream-token-effect-scanline-width"), fa
 assert.equal(tokenized.rootStyles.has("--dream-token-effect-scanline-depth"), false);
 assert.equal(tokenized.rootStyles.has("--dream-token-effect-scanline-speed"), false);
 assert.equal(tokenized.rootStyles.has("--dream-token-layout-title-height"), false);
+assert.equal(tokenized.rootStyles.has("--dream-token-layout-app-bar-height"), false);
+assert.equal(tokenized.rootStyles.has("--dream-token-layout-navigation-row-height"), false);
+assert.equal(tokenized.rootStyles.has("--dream-token-layout-navigation-font-size"), false);
 
 const tacticalBrand = createFixture({ shellPresent: true, brandFixture: true });
 vm.runInNewContext(buildPayload({ id: "preset-codex-tactical-crt" }), tacticalBrand.context);
