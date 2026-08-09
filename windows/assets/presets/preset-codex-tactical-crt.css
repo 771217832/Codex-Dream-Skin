@@ -56,7 +56,8 @@
   --dream-token-layout-shell-gap-compact: 4px;
   --dream-token-layout-active-shell-gap: var(--dream-token-layout-shell-gap);
   --dream-token-layout-title-height: 38px;
-  --dream-token-layout-project-title-height: var(--dream-token-layout-title-height);
+  --dream-token-layout-execution-title-height: var(--dream-token-layout-title-height);
+  --dream-token-layout-project-title-height: 30px;
   --dream-token-layout-app-bar-height: 50.4px;
   --dream-token-layout-footer-height: 48px;
   --dream-token-layout-header-control-height: calc(var(--dream-token-layout-app-bar-height) - 8px);
@@ -134,7 +135,9 @@
 
   --dream-token-label-app: "CODEX_TACTICAL";
   --dream-token-label-navigation: "NAVIGATION";
+  --dream-token-label-execution: "EXECUTION";
   --dream-token-label-projects: "PROJECT";
+  --dream-token-label-tasks: "TASKS";
   --dream-token-label-main: "MAINTASK";
   --dream-token-label-undecide: "DETAIL";
   --dream-token-label-monitor: "MONITOR";
@@ -726,11 +729,30 @@
   backdrop-filter: none !important;
 }
 
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects::before {
+  content: var(--dream-token-label-execution) !important;
+  box-sizing: border-box;
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  display: flex !important;
+  align-items: center;
+  width: 100%;
+  height: var(--dream-token-layout-execution-title-height);
+  min-height: var(--dream-token-layout-execution-title-height);
+  padding-inline: 14px;
+  color: var(--dream-token-color-accent);
+  background: var(--dream-token-color-canvas);
+  border-bottom: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong);
+  font: 700 25px/1 var(--dream-token-font-chrome);
+  letter-spacing: .06em;
+}
+
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects > div > [class~="group/nav-section-title"] {
   box-sizing: border-box;
   position: sticky;
-  z-index: 1;
-  top: 0;
+  z-index: 2;
+  top: var(--dream-token-layout-execution-title-height);
   width: 100%;
   margin-inline: 0;
   height: var(--dream-token-layout-project-title-height);
@@ -738,10 +760,10 @@
   max-height: var(--dream-token-layout-project-title-height);
   flex: 0 0 var(--dream-token-layout-project-title-height);
   overflow: visible !important;
-  padding-inline: 10px !important;
-  color: var(--dream-token-color-accent) !important;
+  padding-inline: 8px !important;
+  color: var(--dream-token-color-text-secondary) !important;
   background: var(--dream-token-color-canvas) !important;
-  border-bottom: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong) !important;
+  border-bottom: none !important;
   text-shadow: var(--dream-token-shadow-none);
 }
 
@@ -755,9 +777,9 @@
   position: absolute;
   z-index: 2;
   top: 50%;
-  left: 10px;
-  width: min(26px, calc(var(--dream-token-layout-project-title-height) - 8px));
-  height: min(26px, calc(var(--dream-token-layout-project-title-height) - 8px));
+  left: 8px;
+  width: min(18px, calc(var(--dream-token-layout-project-title-height) - 8px));
+  height: min(18px, calc(var(--dream-token-layout-project-title-height) - 8px));
   transform: translateY(-50%);
   background-color: var(--dream-token-color-accent);
   -webkit-mask: var(--dream-token-module-icon-project, none) center / contain no-repeat;
@@ -771,15 +793,15 @@
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects > div > [class~="group/nav-section-title"] button[role="button"] > span:first-child::before {
   content: var(--dream-token-label-projects);
-  color: var(--dream-token-color-accent) !important;
-  font: 700 25px/1 var(--dream-token-font-chrome);
+  color: var(--dream-token-color-text-secondary) !important;
+  font: 700 17px/1 var(--dream-token-font-chrome);
   letter-spacing: .06em;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects > div > [class~="group/nav-section-title"] button,
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects > div > [class~="group/nav-section-title"] [role="button"] {
   min-height: calc(var(--dream-token-layout-project-title-height) - (var(--dream-token-stroke-default) * 2)) !important;
-  padding-left: 36px !important;
+  padding-left: 28px !important;
   line-height: 1 !important;
 }
 
@@ -792,12 +814,41 @@
   flex: 0 0 auto !important;
   box-sizing: border-box;
   width: 100%;
-  padding-right: calc(var(--dream-token-layout-scrollbar) + (var(--dream-token-layout-scrollbar-inset) * 2)) !important;
+  max-height: 35% !important;
+  margin-top: calc(var(--dream-token-layout-panel-gap) * -1) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0 !important;
   color: var(--dream-token-color-text-primary) !important;
-  background: var(--dream-token-color-transparent) !important;
-  border: none !important;
+  background: var(--dream-token-background-panel) !important;
+  border-width: 0 var(--dream-token-stroke-strong) var(--dream-token-stroke-strong) !important;
+  border-style: solid !important;
+  border-color: var(--dream-token-color-line-strong) !important;
   border-radius: var(--dream-token-radius-panel) !important;
   box-shadow: var(--dream-token-shadow-none) !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-tasks > section {
+  padding-inline: 0 !important;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-tasks [class~="group/nav-section-title"] {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  min-height: var(--dream-token-layout-project-title-height);
+  padding-inline: 8px !important;
+  color: var(--dream-token-color-text-secondary) !important;
+  background: var(--dream-token-color-canvas) !important;
+  border-bottom: none !important;
+  font: 700 17px/1 var(--dream-token-font-chrome) !important;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-tasks [class~="group/nav-section-title"] > :first-child,
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-tasks [class~="group/nav-section-title"] > :first-child * {
+  text-transform: uppercase !important;
 }
 
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] aside.app-shell-left-panel button,
@@ -2094,12 +2145,13 @@
   isolation: isolate;
   -webkit-mask-image: none !important;
   mask-image: none !important;
-  border: var(--dream-token-stroke-strong) solid var(--dream-token-color-line-strong) !important;
-  box-shadow: inset 0 calc(var(--dream-token-stroke-strong) * -1) 0 var(--dream-token-color-line-strong) !important;
+  border-width: var(--dream-token-stroke-strong) var(--dream-token-stroke-strong) 0 !important;
+  border-style: solid !important;
+  border-color: var(--dream-token-color-line-strong) !important;
+  box-shadow: var(--dream-token-shadow-none) !important;
 }
 
 /* Remove Codex's native scroll fades from the Project viewport. */
-:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects::before,
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects::after {
   content: none !important;
   display: none !important;
@@ -2118,6 +2170,31 @@
 }
 
 /* Native project rows stay virtualized; these overlays supply the tactical tree. */
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects [role="list"]:has(> .group\/cwd[role="listitem"]) {
+  position: relative;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects [role="list"]:has(> .group\/cwd[role="listitem"])::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 15px auto 15px 15px;
+  width: var(--dream-token-stroke-project-tree);
+  background: var(--dream-token-color-line-default);
+  pointer-events: none;
+}
+
+:root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects .group\/cwd[role="listitem"]::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 15px;
+  left: 15px;
+  width: 9px;
+  border-top: var(--dream-token-stroke-project-tree) solid var(--dream-token-color-line-default);
+  pointer-events: none;
+}
+
 :root.codex-dream-skin.dream-theme-dark[data-dream-theme-id="preset-codex-tactical-crt"] .dream-sidebar-projects [data-app-action-sidebar-project-list-id] {
   position: relative;
 }

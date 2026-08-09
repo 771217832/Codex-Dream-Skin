@@ -744,11 +744,8 @@ assert.equal(
   sidebarModules.sidebar.aside,
   "The Project scrollbar must be anchored inside the resizable sidebar.",
 );
-const projectBottomFrame = sidebarModules.nodes.get("codex-dream-skin-project-bottom-frame");
-assert.equal(projectBottomFrame.style.top, "758px",
-  "Project frame extension must begin where the native Project border ends.");
-assert.equal(projectBottomFrame.style.height, "62px",
-  "Project frame extension must reach the MAINTASK lower edge.");
+assert.equal(sidebarModules.nodes.has("codex-dream-skin-project-bottom-frame"), false,
+  "Integrated Tasks must provide the EXECUTION frame bottom without an overlay extension.");
 sidebarModules.context.window.__CODEX_DREAM_SKIN_STATE__.ensure();
 for (const [index, node] of originalNavChildren.entries()) {
   assert.equal(sidebarModules.sidebar.nav.children[index], node,

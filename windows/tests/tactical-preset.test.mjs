@@ -166,7 +166,9 @@ assert.match(rendererSource, /memoizedProps\?\.onSelect[\s\S]*?onSelect\?\.\(\)/
 assert.match(rendererSource, /match:\s*"NEW TASK"[\s\S]*?index:\s*"01"[\s\S]*?label:\s*"NEW_TASK"/i);
 assert.match(css, /\.dream-sidebar-projects\s*\{[\s\S]*?border:/i);
 assert.match(css, /--dream-token-label-navigation:\s*"NAVIGATION"/i);
+assert.match(css, /--dream-token-label-execution:\s*"EXECUTION"/i);
 assert.match(css, /--dream-token-label-projects:\s*"PROJECT"/i);
+assert.match(css, /--dream-token-label-tasks:\s*"TASKS"/i);
 assert.match(css, /--dream-token-label-main:\s*"MAINTASK"/i);
 assert.match(css, /--dream-token-label-undecide:\s*"DETAIL"/i);
 assert.match(css, /--dream-token-label-monitor:\s*"MONITOR"/i);
@@ -174,7 +176,8 @@ assert.match(css, /--dream-token-layout-app-bar-height:\s*50\.4px/i);
 assert.match(css, /--dream-token-layout-footer-height:\s*48px/i);
 assert.match(css, /--dream-token-layout-panel-gap:\s*6px/i);
 assert.match(css, /--dream-token-layout-section-gap:\s*6px/i);
-assert.match(css, /--dream-token-layout-project-title-height:\s*var\(--dream-token-layout-title-height\)/i);
+assert.match(css, /--dream-token-layout-execution-title-height:\s*var\(--dream-token-layout-title-height\)/i);
+assert.match(css, /--dream-token-layout-project-title-height:\s*30px/i);
 assert.match(css, /--dream-token-layout-header-inset:\s*4px/i);
 assert.match(css, /--dream-token-layout-menu-button-width:\s*126px/i);
 assert.match(css, /--dream-token-layout-active-shell-gap:\s*var\(--dream-token-layout-shell-gap\)/i);
@@ -237,11 +240,17 @@ assert.match(css, /aside\.app-shell-left-panel\s*>\s*\[class~="max-w-full"\]\s*\
 assert.doesNotMatch(css, /aside\.app-shell-left-panel\s*\{[\s\S]*?width:\s*var\(--dream-token-layout-left-rail-width\)\s*!important/i,
   "The Tactical preset must not override Codex's native resizable sidebar width.");
 assert.match(css, /\.dream-sidebar-projects\s*\{[\s\S]*?overflow-y:\s*auto\s*!important/i);
+assert.match(css, /\.dream-sidebar-projects::before\s*\{[\s\S]*?content:\s*var\(--dream-token-label-execution\)[\s\S]*?position:\s*sticky/i);
+assert.match(css, /\.dream-sidebar-tasks\s*\{[\s\S]*?max-height:\s*35%\s*!important[\s\S]*?overflow-y:\s*auto\s*!important/i);
+assert.match(css, /\.dream-sidebar-tasks\s*\{[\s\S]*?margin-top:\s*calc\(var\(--dream-token-layout-panel-gap\)\s*\*\s*-1\)/i);
+assert.match(css, /\.dream-sidebar-tasks[\s\S]*?group\/nav-section-title[\s\S]*?>\s*:first-child[\s\S]*?\{[\s\S]*?text-transform:\s*uppercase\s*!important/i);
 assert.match(css, /#codex-dream-skin-project-scrollbar\s*\{[\s\S]*?position:\s*absolute[\s\S]*?right:\s*calc\([\s\S]*?pointer-events:\s*auto[\s\S]*?touch-action:\s*none/i);
 assert.match(css, /#codex-dream-skin-project-bottom-frame\s*\{[\s\S]*?border-left:\s*var\(--dream-token-stroke-strong\)[\s\S]*?border-bottom:\s*var\(--dream-token-stroke-strong\)/i);
 assert.match(rendererSource, /layoutObserver\?\.observe\?\.\(tacticalAside\)[\s\S]*?layoutObserver\?\.observe\?\.\(tacticalProjects\)/i);
 assert.match(css, /\.dream-sidebar-projects\s*>\s*div\s*>\s*\[class~="group\/nav-section-title"\]\s*\{[\s\S]*?width:\s*100%[\s\S]*?margin-inline:\s*0/i);
 assert.match(css, /\[data-app-action-sidebar-project-list-id\]::before\s*\{[\s\S]*?--dream-token-color-line-default/i);
+assert.match(css, /\[role="list"\]:has\(> \.group\\\/cwd\[role="listitem"\]\)::before\s*\{[\s\S]*?inset:\s*15px\s+auto\s+15px\s+15px/i);
+assert.match(css, /\.group\\\/cwd\[role="listitem"\]::before\s*\{[\s\S]*?border-top:\s*var\(--dream-token-stroke-project-tree\)/i);
 assert.match(css, /--dream-token-stroke-project-tree:\s*2px/i);
 assert.match(css, /\[data-app-action-sidebar-project-list-id\]::before\s*\{[\s\S]*?width:\s*var\(--dream-token-stroke-project-tree\)/i);
 assert.match(css, /\[data-app-action-sidebar-thread-row\]::before\s*\{[\s\S]*?border-top:\s*var\(--dream-token-stroke-project-tree\)/i);
